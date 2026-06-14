@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
 
           const activeMember = ownerMember || fallbackMember;
           if (activeMember && activeMember.user) {
-            adminEmail = "althafvahidkhan123@gmail.com";
+            adminEmail = activeMember.user.email;
             adminName = activeMember.user.name || activeMember.user.email.split("@")[0];
           }
 
