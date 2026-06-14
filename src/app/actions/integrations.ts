@@ -83,12 +83,18 @@ export async function triggerAudit(
       url.searchParams.set("secret", process.env.CRON_SECRET);
     }
 
+    // Add Vercel protection bypass token to bypass deployment protection auth gate
+    const bypassToken = process.env.VERCEL_PROTECTION_BYPASS || "tgHytrll5Ljme0kAkGhYoGap7mmIOcTE";
+    url.searchParams.set("x-vercel-protection-bypass", bypassToken);
+    url.searchParams.set("x-vercel-set-bypass-cookie", "true");
+
     console.log(`[Action] Triggering seat optimizer audit manually. Target: ${url.pathname}`);
     console.log(`[Action] Server Action CRON_SECRET is defined:`, !!process.env.CRON_SECRET);
     const res = await fetch(url.toString(), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-vercel-protection-bypass": bypassToken,
       },
     });
 
@@ -107,8 +113,15 @@ export async function triggerAudit(
       if (process.env.CRON_SECRET) {
         evaluateUrl.searchParams.set("secret", process.env.CRON_SECRET);
       }
+      evaluateUrl.searchParams.set("x-vercel-protection-bypass", bypassToken);
+      evaluateUrl.searchParams.set("x-vercel-set-bypass-cookie", "true");
+
       console.log(`[Action] Triggering seat evaluation manually after audit: ${evaluateUrl.pathname}`);
-      const evalRes = await fetch(evaluateUrl.toString());
+      const evalRes = await fetch(evaluateUrl.toString(), {
+        headers: {
+          "x-vercel-protection-bypass": bypassToken,
+        },
+      });
       if (evalRes.ok) {
         const evalData = await evalRes.json();
         console.log(`[Action] Seat evaluation triggered successfully:`, evalData);
