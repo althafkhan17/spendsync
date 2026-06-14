@@ -50,6 +50,8 @@ const extractionSchema = z.object({
   primaryBilledSeats: z.number().int().describe("Locate the explicit line item for 'Figma Design (seats)' or 'Professional plan'. Extract ONLY the value from the Quantity column for this row. Ignore Dev Mode quantities, subtotals, taxes, or total dollar balances. For non-seat-based invoices (e.g. AWS) or if seat details are missing, default to 1."),
   seatUnitPrice: z.number().describe("The unit price per seat, e.g. 15.00. For non-seat-based invoices (e.g. AWS) or if seat details are missing, default to the total invoice amount."),
   currency: z.string().describe("The currency of the transaction, e.g. USD or INR"),
+  invoiceDate: z.string().nullable().optional().describe("The date of the invoice/receipt in YYYY-MM-DD format, or null if not found."),
+  renewalDate: z.string().nullable().optional().describe("The date the subscription will renew or expire in YYYY-MM-DD format, or null if not found."),
 });
 
 type ExtractionResult = z.infer<typeof extractionSchema>;
@@ -178,7 +180,9 @@ export async function POST(request: NextRequest) {
                 vendorName: { type: SchemaType.STRING, description: "The name of the vendor/merchant in uppercase, e.g., FIGMA" },
                 primaryBilledSeats: { type: SchemaType.INTEGER, description: "Locate the explicit line item for 'Figma Design (seats)' or 'Professional plan'. Extract ONLY the value from the Quantity column for this row. Ignore Dev Mode quantities, subtotals, taxes, or total dollar balances. For non-seat-based invoices (e.g. AWS) or if seat details are missing, default to 1." },
                 seatUnitPrice: { type: SchemaType.NUMBER, description: "The unit price per seat, e.g. 15.00. For non-seat-based invoices (e.g. AWS) or if seat details are missing, default to the total invoice amount." },
-                currency: { type: SchemaType.STRING, description: "The currency of the transaction, e.g. USD or INR" }
+                currency: { type: SchemaType.STRING, description: "The currency of the transaction, e.g. USD or INR" },
+                invoiceDate: { type: SchemaType.STRING, description: "The date of the invoice/receipt in YYYY-MM-DD format, or null if not found." },
+                renewalDate: { type: SchemaType.STRING, description: "The date the subscription will renew or expire in YYYY-MM-DD format, or null if not found." }
               },
               required: ["vendorName", "primaryBilledSeats", "seatUnitPrice", "currency"]
             } as any
@@ -199,7 +203,7 @@ export async function POST(request: NextRequest) {
                   mimeType: "application/pdf"
                 }
               },
-              "You are a highly accurate financial extraction AI. Analyze this PDF invoice/receipt and extract the vendorName, primaryBilledSeats, seatUnitPrice, and currency. Locate the explicit line item for 'Figma Design (seats)' or 'Professional plan'. Extract ONLY the value from the Quantity column for this row. Ignore Dev Mode quantities, subtotals, taxes, or total dollar balances."
+              "You are a highly accurate financial extraction AI. Analyze this PDF invoice/receipt and extract the vendorName, primaryBilledSeats, seatUnitPrice, currency, invoiceDate, and renewalDate. If the text specifies a renewal date or a date the subscription is active until (e.g., 'active until June 17, 2026' or 'will be renewed on June 18'), extract it as the renewalDate. Locate the explicit line item for 'Figma Design (seats)' or 'Professional plan'. Extract ONLY the value from the Quantity column for this row. Ignore Dev Mode quantities, subtotals, taxes, or total dollar balances."
             ]);
             break; // Success
           } catch (err) {
@@ -237,7 +241,7 @@ export async function POST(request: NextRequest) {
         const structuredModel = model.withStructuredOutput(extractionSchema);
         const prompt = PromptTemplate.fromTemplate(
           "You are a highly accurate financial extraction AI. Analyze the following email text.\n\n" +
-          "Extract the vendorName, primaryBilledSeats, seatUnitPrice, and currency. Locate the explicit line item for 'Figma Design (seats)' or 'Professional plan'. Extract ONLY the value from the Quantity column for this row. Ignore Dev Mode quantities, subtotals, taxes, or total dollar balances.\n\n" +
+          "Extract the vendorName, primaryBilledSeats, seatUnitPrice, currency, invoiceDate, and renewalDate. If the text specifies a renewal date or a date the subscription is active until (e.g., 'active until June 17, 2026' or 'will be renewed on June 18'), extract it as the renewalDate. Locate the explicit line item for 'Figma Design (seats)' or 'Professional plan'. Extract ONLY the value from the Quantity column for this row. Ignore Dev Mode quantities, subtotals, taxes, or total dollar balances.\n\n" +
           "Email text:\n{emailText}"
         );
 
@@ -255,18 +259,35 @@ export async function POST(request: NextRequest) {
     if (extractedData && extractedData.primaryBilledSeats > 0) {
       console.log("Gemini Extraction Success:", extractedData);
 
-      // Calculate nextRenewalDate
-      const nextRenewalDate = new Date();
       const isAnnual = textBody.toLowerCase().includes("annual") || 
                        textBody.toLowerCase().includes("year") || 
                        subject.toLowerCase().includes("annual") || 
                        subject.toLowerCase().includes("year");
       const billingCycle = isAnnual ? "ANNUAL" : "MONTHLY";
 
-      if (billingCycle === "MONTHLY") {
-        nextRenewalDate.setDate(nextRenewalDate.getDate() + 30);
+      let nextRenewalDate = new Date();
+
+      if (extractedData.renewalDate) {
+        const parsed = new Date(extractedData.renewalDate);
+        if (!isNaN(parsed.getTime())) {
+          nextRenewalDate = parsed;
+        }
+      } else if (extractedData.invoiceDate) {
+        const parsed = new Date(extractedData.invoiceDate);
+        if (!isNaN(parsed.getTime())) {
+          nextRenewalDate = parsed;
+          if (billingCycle === "MONTHLY") {
+            nextRenewalDate.setDate(nextRenewalDate.getDate() + 30);
+          } else {
+            nextRenewalDate.setDate(nextRenewalDate.getDate() + 365);
+          }
+        }
       } else {
-        nextRenewalDate.setDate(nextRenewalDate.getDate() + 365);
+        if (billingCycle === "MONTHLY") {
+          nextRenewalDate.setDate(nextRenewalDate.getDate() + 30);
+        } else {
+          nextRenewalDate.setDate(nextRenewalDate.getDate() + 365);
+        }
       }
 
       // Check if a subscription already exists (case-insensitive merchantName match)

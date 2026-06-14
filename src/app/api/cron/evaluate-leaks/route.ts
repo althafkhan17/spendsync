@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     console.log("═══════════════════════════════════════════");
 
     // 2. Fetch active integrations with financial waste (wastedAmount > 0)
-    // Include the workspace along with its most recent receipt email log (acting as Invoice date baseline)
+    // Include workspace active subscriptions and its most recent receipt email log as a fallback baseline
     const integrations = await prisma.integration.findMany({
       where: {
         isActive: true,
@@ -44,6 +44,11 @@ export async function GET(request: NextRequest) {
       include: {
         workspace: {
           include: {
+            subscriptions: {
+              where: {
+                status: "ACTIVE",
+              },
+            },
             emailLogs: {
               where: {
                 wasReceipt: true,
@@ -69,15 +74,27 @@ export async function GET(request: NextRequest) {
       const workspace = integration.workspace;
       const latestEmailLog = workspace.emailLogs[0];
 
-      // Treat the latest receipt log as the Invoice baseline.
-      // Fallback: If no receipt exists, use integration's createdAt minus 24 days (triggering the 6-day window for test verification)
-      const invoiceDate = latestEmailLog
-        ? latestEmailLog.createdAt
-        : new Date(integration.createdAt.getTime() - 24 * 24 * 60 * 60 * 1000);
+      // Match the active subscription for this integration's provider
+      const subscription = workspace.subscriptions.find(
+        (s) => s.merchantName.toLowerCase() === integration.provider.toLowerCase() ||
+               (integration.provider === "GITHUB_COPILOT" && 
+                (s.merchantName.toLowerCase() === "github" || s.merchantName.toLowerCase() === "github copilot"))
+      );
 
-      // 3. Proactive Calendar Proximity Logic (Renewal Date is projected 30 days after the invoice)
-      const projectedRenewalDate = new Date(invoiceDate.getTime());
-      projectedRenewalDate.setDate(projectedRenewalDate.getDate() + 30);
+      let projectedRenewalDate: Date;
+
+      if (subscription) {
+        projectedRenewalDate = subscription.nextRenewalDate;
+        console.log(`  🔗 Found active subscription for ${integration.provider} with next renewal: ${projectedRenewalDate.toISOString()}`);
+      } else {
+        // Fallback: Treat the latest receipt log as the Invoice baseline and project 30 days out.
+        const invoiceDate = latestEmailLog
+          ? latestEmailLog.createdAt
+          : new Date(integration.createdAt.getTime() - 24 * 24 * 60 * 60 * 1000);
+        projectedRenewalDate = new Date(invoiceDate.getTime());
+        projectedRenewalDate.setDate(projectedRenewalDate.getDate() + 30);
+        console.log(`  ⚠️ No active subscription found. Projected fallback renewal date: ${projectedRenewalDate.toISOString()}`);
+      }
 
       const timeDiff = projectedRenewalDate.getTime() - now.getTime();
       const daysRemaining = Math.ceil(timeDiff / (24 * 60 * 60 * 1000));

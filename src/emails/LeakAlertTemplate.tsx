@@ -64,9 +64,14 @@ export function renderLeakAlertEmail({
     </div>
 
     <h3 style="font-size: 12px; font-weight: 750; color: #334155; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 12px 0;">Optimization Details:</h3>
-    <ul style="margin: 0 0 28px 0; padding-left: 20px;">
+    <ul style="margin: 0 0 24px 0; padding-left: 20px;">
       ${bulletItemsHtml}
     </ul>
+
+    <p style="font-size: 13.5px; color: #475569; margin: 0 0 24px 0; line-height: 1.6;">
+      <strong>What should you do next?</strong><br />
+      Click the button below to log into SpendSync and view the specific list of idle or unassigned user accounts. You can then use this list to safely remove or downgrade their licenses directly in your ${providerLabel} admin portal to stop the leak.
+    </p>
 
     <a href="${dashboardUrl}" target="_blank" rel="noopener noreferrer" style="display: block; width: 100%; box-sizing: border-box; background-color: #0f172a; color: #ffffff; text-align: center; padding: 14px 24px; border-radius: 10px; font-weight: 700; font-size: 14px; text-decoration: none; margin-bottom: 28px; box-shadow: 0 2px 4px rgba(15, 23, 42, 0.1);">
       Optimize Seats on SpendSync Dashboard
