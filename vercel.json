@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/renewals",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/optimize-seats",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/evaluate-leaks",
+      "schedule": "30 7 * * *"
+    }
+  ]
+}

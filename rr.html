@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Figma Invoice #FG-202505-49281</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #fff; color: #1a1a1a; }
+        .invoice { max-width: 800px; margin: auto; border: 1px solid #ddd; padding: 40px; }
+        .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
+        .logo { font-size: 28px; font-weight: bold; color: #1E88E5; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; }
+        .total { font-size: 18px; font-weight: bold; text-align: right; }
+        .paid { color: #2e7d32; font-weight: bold; font-size: 22px; }
+    </style>
+</head>
+<body>
+    <div class="invoice">
+        <div class="header">
+            <div>
+                <div class="logo">FIGMA</div>
+                <p>Figma, Inc.<br>
+                2443 Fillmore Street #380-5708<br>
+                San Francisco, CA 94115, USA<br>
+                Tax ID: 81-1234567</p>
+            </div>
+            <div style="text-align:right">
+                <h2>INVOICE</h2>
+                <p><strong>Invoice #:</strong> FG-202505-49281<br>
+                <strong>Date:</strong> May 5, 2025<br>
+                <strong>Due Date:</strong> May 10, 2025</p>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <strong>Bill To:</strong><br>
+            Acme Design Organization<br>
+            123 Corporate Plaza, Suite 1500<br>
+            New York, NY 10001<br>
+            United States<br>
+            VAT/Tax ID: (if applicable)
+        </div>
+
+        <table>
+            <tr>
+                <th>Description</th>
+                <th style="text-align:center">Qty</th>
+                <th style="text-align:right">Unit Price</th>
+                <th style="text-align:right">Amount</th>
+            </tr>
+            <tr>
+                <td>Figma Organization Plan – Annual (15 seats)</td>
+                <td style="text-align:center">15</td>
+                <td style="text-align:right">$60.00</td>
+                <td style="text-align:right">$900.00</td>
+            </tr>
+            <tr>
+                <td colspan="3" style="text-align:right"><strong>Subtotal</strong></td>
+                <td style="text-align:right"><strong>$900.00</strong></td>
+            </tr>
+            <tr>
+                <td colspan="3" style="text-align:right">Total (USD)</td>
+                <td style="text-align:right"><strong>$900.00</strong></td>
+            </tr>
+        </table>
+
+        <div class="paid" style="text-align:center; margin: 30px 0;">
+            ✅ PAID ON MAY 10, 2025
+        </div>
+
+        <p><strong>Payment Method:</strong> Visa •••• 4242</p>
+        <p><strong>Payment Reference:</strong> FG-202505-49281</p>
+
+        <hr style="margin: 30px 0;">
+        <p style="text-align:center">
+            Thank you for using Figma!<br>
+            Your Organization subscription is active until <strong>May 5, 2026</strong>.
+        </p>
+    </div>
+</body>
+</html>

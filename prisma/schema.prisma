@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id          String            @id @default(cuid())
+  clerkId     String            @unique
+  email       String            @unique
+  name        String?
+  imageUrl    String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  memberships WorkspaceMember[]
+
+  @@map("users")
+}
+
+model Workspace {
+  id            String            @id @default(uuid())
+  name          String
+  slug          String            @unique
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  emailLogs     EmailLog[]
+  integrations  Integration[]
+  subscriptions Subscription[]
+  members       WorkspaceMember[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  role        WorkspaceRole @default(MEMBER)
+  createdAt   DateTime      @default(now())
+  userId      String
+  workspaceId String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@map("workspace_members")
+}
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  merchantName       String
+  amount             Decimal            @db.Decimal(10, 2)
+  currency           String             @default("USD")
+  billingCycle       BillingCycle
+  status             SubscriptionStatus @default(ACTIVE)
+  nextRenewalDate    DateTime
+  extractedFromEmail String?
+  confidenceScore    Float?
+  notes              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  workspaceId        String
+  billedSeats        Int?
+  seatUnitPrice      Decimal?           @db.Decimal(10, 2)
+  emailLogs          EmailLog[]
+  workspace          Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([workspaceId, status])
+  @@index([workspaceId, nextRenewalDate])
+  @@map("subscriptions")
+}
+
+model EmailLog {
+  id              String        @id @default(uuid())
+  senderEmail     String
+  subject         String
+  bodyPreview     String
+  source          String        @default("TEXT")
+  attachmentName  String?
+  wasReceipt      Boolean       @default(false)
+  merchantName    String?
+  amount          Decimal?      @db.Decimal(10, 2)
+  confidenceScore Float?
+  rawExtraction   String?
+  createdAt       DateTime      @default(now())
+  workspaceId     String
+  subscriptionId  String?
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id])
+  workspace       Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([workspaceId, createdAt])
+  @@map("email_logs")
+}
+
+model Integration {
+  id                String    @id @default(uuid())
+  provider          String
+  accessToken       String
+  refreshToken      String?
+  tokenExpiresAt    DateTime?
+  isActive          Boolean   @default(true)
+  lastAuditAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  workspaceId       String
+  activeSeats       Int?
+  billedSeats       Int?
+  wastedAmount      Decimal?  @db.Decimal(10, 2)
+  wastedSeats       Int?
+  tokenUsageReport  String?
+  lastWarningSentAt DateTime?
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, provider])
+  @@index([workspaceId])
+  @@index([workspaceId, isActive])
+  @@map("integrations")
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  NEEDS_REVIEW
+}
+
+enum WorkspaceRole {
+  OWNER
+  MEMBER
+}
