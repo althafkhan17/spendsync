@@ -75,7 +75,8 @@ export async function triggerAudit(
       return { success: false, error: "Integration not found or access denied" };
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
     // Construct request with cron secret if configured
     const url = new URL("/api/cron/optimize-seats", appUrl);
     if (process.env.CRON_SECRET) {

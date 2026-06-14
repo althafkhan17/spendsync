@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
               provider: integration.provider,
               wastedAmount: Number(integration.wastedAmount),
               daysRemaining,
-              dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/integrations`,
+              dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")}/dashboard/integrations`,
             });
 
             const { data, error } = await resend.emails.send({
