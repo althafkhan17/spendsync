@@ -29,6 +29,10 @@ async function handleOptimizeSeats(request: NextRequest) {
 
     if (!isDev && !hasValidHeader && !hasValidParam) {
       console.error("❌ Unauthorized cron request: Authorization token mismatch");
+      console.log(`[API Route Auth Failure Info]`);
+      console.log(`  - CRON_SECRET in API Route is defined:`, !!process.env.CRON_SECRET);
+      console.log(`  - secretParam in query is present:`, !!secretParam);
+      console.log(`  - authHeader is present:`, !!authHeader);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

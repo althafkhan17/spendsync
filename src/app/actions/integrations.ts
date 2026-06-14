@@ -83,7 +83,8 @@ export async function triggerAudit(
       url.searchParams.set("secret", process.env.CRON_SECRET);
     }
 
-    console.log(`[Action] Triggering seat optimizer audit manually via API: ${url.pathname}`);
+    console.log(`[Action] Triggering seat optimizer audit manually. Target: ${url.pathname}`);
+    console.log(`[Action] Server Action CRON_SECRET is defined:`, !!process.env.CRON_SECRET);
     const res = await fetch(url.toString(), {
       method: "POST",
       headers: {
