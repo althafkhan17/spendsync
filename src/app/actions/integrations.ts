@@ -100,6 +100,24 @@ export async function triggerAudit(
     const data = await res.json();
     console.log(`[Action] Audit completed successfully:`, data);
 
+    // After a successful manual audit, trigger evaluate-leaks to send warning email if applicable
+    try {
+      const evaluateUrl = new URL("/api/cron/evaluate-leaks", appUrl);
+      if (process.env.CRON_SECRET) {
+        evaluateUrl.searchParams.set("secret", process.env.CRON_SECRET);
+      }
+      console.log(`[Action] Triggering seat evaluation manually after audit: ${evaluateUrl.pathname}`);
+      const evalRes = await fetch(evaluateUrl.toString());
+      if (evalRes.ok) {
+        const evalData = await evalRes.json();
+        console.log(`[Action] Seat evaluation triggered successfully:`, evalData);
+      } else {
+        console.error(`[Action] Seat evaluation failed with status ${evalRes.status}`);
+      }
+    } catch (evalErr) {
+      console.error("[Action] Failed to trigger evaluate-leaks after manual audit:", evalErr);
+    }
+
     revalidatePath("/dashboard/integrations");
     return { success: true };
   } catch (error: any) {
