@@ -282,15 +282,11 @@ async function handleOptimizeSeats(request: NextRequest) {
           };
           tokenUsageReportJson = JSON.stringify(tokenUsageReport);
 
-          // Evaluate actual active seats from individualSeats
-          let calculatedWastedSeats = 0;
+          // Evaluate actual active seats from individualSeats (users who are ACTIVE)
           const individualSeats = tokenUsageReport.individualSeats || [];
-          for (const user of individualSeats) {
-            if (user.status === "IDLE" || !user.lastActivityAt) {
-              calculatedWastedSeats++;
-            }
-          }
-          actualActiveSeats = Math.max(0, billedSeats - calculatedWastedSeats);
+          actualActiveSeats = individualSeats.filter(
+            (user: any) => user.status === "ACTIVE"
+          ).length;
         }
 
         // Execute the definitive, strict baseline formula:

@@ -591,7 +591,7 @@ export function IntegrationCard({
           />
           
           {/* Dialog Container */}
-          <div className="relative z-10 w-full max-w-lg transform overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative z-10 w-full max-w-lg max-h-[90vh] flex flex-col transform overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200">
             {/* Close button */}
             <button
               onClick={() => setIsTelemetryOpen(false)}
@@ -604,7 +604,7 @@ export function IntegrationCard({
             </button>
 
             {/* Icon + Title */}
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-4 flex-shrink-0">
               <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm", meta.iconBg)}>
                 {meta.icon}
               </div>
@@ -618,292 +618,295 @@ export function IntegrationCard({
               </div>
             </div>
 
-            {/* Highlights Grid */}
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                <span className="text-[9px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">AI Workload</span>
-                <span className="text-base font-extrabold text-slate-800 tabular-nums">
-                  {providerKey === "GITHUB_COPILOT" ? "985k" : `${(totalTokens / 1000).toFixed(0)}k`} <span className="text-[10px] text-slate-500 font-normal">tkn</span>
-                </span>
-              </div>
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                <span className="text-[9px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">LLM Engines</span>
-                <span className="text-base font-extrabold text-slate-800">
-                  {providerKey === "GITHUB_COPILOT" ? "2" : uniqueModels} <span className="text-[10px] text-slate-500 font-normal">active</span>
-                </span>
-              </div>
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                <span className="text-[9px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">SaaS Leak</span>
-                <span className="text-base font-extrabold text-rose-600 tabular-nums">
-                  {providerKey === "GITHUB_COPILOT" ? "$19.00" : `$${totalLeak.toFixed(2)}`}<span className="text-[10px] text-rose-500 font-normal">/mo</span>
-                </span>
-              </div>
-            </div>
-
-            {/* Pooled AI Capacity Status Banner */}
-            {providerKey === "GITHUB_COPILOT" && (
-              <div className="flex items-center justify-between rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-[11px] font-semibold text-slate-200 shadow-md mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-400"></span>
+            {/* Scrollable Content Container */}
+            <div className="flex-1 overflow-y-auto pr-1.5 space-y-4 min-h-0 scrollbar-thin">
+              {/* Highlights Grid */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
+                  <span className="text-[9px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">AI Workload</span>
+                  <span className="text-base font-extrabold text-slate-800 tabular-nums">
+                    {providerKey === "GITHUB_COPILOT" ? "985k" : `${(totalTokens / 1000).toFixed(0)}k`} <span className="text-[10px] text-slate-500 font-normal">tkn</span>
                   </span>
-                  <span>Pooled AI Credit Capacity:</span>
                 </div>
-                <span className="text-indigo-400 font-bold tabular-nums whitespace-nowrap">
-                  ${((integration?.wastedSeats ?? 0) * 19).toFixed(2)} Stranded
-                </span>
-              </div>
-            )}
-
-            {/* Copilot Optimization Policy */}
-            {providerKey === "GITHUB_COPILOT" && (
-              <div className="mb-4 rounded-xl border border-slate-200/60 bg-slate-50/50 p-3.5 text-xs text-slate-650 shadow-sm">
-                <h4 className="font-bold text-slate-800 mb-2.5 flex items-center gap-1.5">
-                  <svg className="h-3.5 w-3.5 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="16" x2="12" y2="12" />
-                    <line x1="12" y1="8" x2="12.01" y2="8" />
-                  </svg>
-                  Copilot Optimization Policy
-                </h4>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-[11px] leading-relaxed">
-                  <div>
-                    <span className="text-slate-400 block font-medium">Idle Threshold</span>
-                    <span className="font-semibold text-slate-700">30 Days (No activity)</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block font-medium">Telemetry Resolution</span>
-                    <span className="font-semibold text-slate-700">Hourly API Sync</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block font-medium">Public Code Filter</span>
-                    <span className="font-semibold text-amber-600">Blocked (Enforced)</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block font-medium">Allowed LLMs</span>
-                    <span className="font-semibold text-slate-700">GPT-4o, Claude 3.5, Gemini 1.5</span>
-                  </div>
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
+                  <span className="text-[9px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">LLM Engines</span>
+                  <span className="text-base font-extrabold text-slate-800">
+                    {providerKey === "GITHUB_COPILOT" ? "2" : uniqueModels} <span className="text-[10px] text-slate-500 font-normal">active</span>
+                  </span>
+                </div>
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
+                  <span className="text-[9px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">SaaS Leak</span>
+                  <span className="text-base font-extrabold text-rose-600 tabular-nums">
+                    {providerKey === "GITHUB_COPILOT" ? "$19.00" : `$${totalLeak.toFixed(2)}`}<span className="text-[10px] text-rose-500 font-normal">/mo</span>
+                  </span>
                 </div>
               </div>
-            )}
 
-            {/* Scrollable List Container */}
-            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-              {providerKey === "GITHUB_COPILOT" && report && !Array.isArray(report) ? (
-                report.individualSeats?.map((item: any, idx: number) => {
-                  const isActive = item.status === "ACTIVE";
-                  const username = item.username || "unknown-dev";
-                  const avatarInitials = username.slice(0, 2).toUpperCase();
-
-                  // Format lastActivityAt to a clean readable string
-                  let activityStr = "Never active";
-                  if (item.lastActivityAt) {
-                    try {
-                      activityStr = `Active ${new Date(item.lastActivityAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit"
-                      })}`;
-                    } catch (e) {
-                      activityStr = `Active ${item.lastActivityAt}`;
-                    }
-                  }
-
-                  return (
-                    <div
-                      key={idx}
-                      className={cn(
-                        "relative overflow-hidden rounded-xl border p-3.5 transition-all duration-300",
-                        !isActive
-                          ? "bg-rose-50/20 border-rose-100/70"
-                          : "bg-white border-slate-100 hover:border-indigo-100 hover:shadow-sm"
-                      )}
-                    >
-                      {/* Top Row: User/Model & Leak */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
-                          {/* Initials Badge */}
-                          <div className={cn(
-                            "flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold border",
-                            !isActive
-                              ? "bg-rose-50 text-rose-600 border-rose-100"
-                              : "bg-indigo-50 text-indigo-650 border-indigo-100"
-                          )}>
-                            {avatarInitials}
-                          </div>
-                          <div>
-                            <div className="font-bold text-[12px] text-slate-800 flex items-center gap-2">
-                              {username}
-                              {!isActive ? (
-                                <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-650 ring-1 ring-inset ring-rose-500/10 animate-pulse">
-                                  <span className="mr-1 h-1 w-1 rounded-full bg-rose-500" />
-                                  ⚠️ Idle License: Wasting $19.00/mo
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-[9px] font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-550/10">
-                                  {item.primaryModel}
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
-                              <span>{activityStr}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Financial Leak / Status */}
-                        <div className="text-right">
-                          <span className="text-[9px] font-semibold tracking-wide text-slate-450 block uppercase">
-                            {!isActive ? "Financial Leak" : "Seat Status"}
-                          </span>
-                          <span className={cn(
-                            "text-[12px] font-bold tabular-nums",
-                            !isActive ? "text-rose-655 font-extrabold" : "text-emerald-600"
-                          )}>
-                            {!isActive ? "$19.00" : "Active"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                // Fallback for array-based reports (legacy GITHUB_COPILOT or FIGMA)
-                Array.isArray(report) && report.map((item, idx) => {
-                  const isWasting = item.status === "ABSOLUTE_LEAK" || (item.inputTokens === 0 && item.outputTokens === 0) || (item.creditsConsumed === 0 && item.assignedSeats > 0);
-                  const ratioPct = item.creditsAllocated > 0 ? ((item.creditsConsumed ?? 0) / item.creditsAllocated) * 100 : 0;
-                  
-                  const teamName = item.teamName || item.developer || "Unknown Team";
-                  const primaryModel = item.primaryModel || item.model || "None";
-                  const creditsConsumed = item.creditsConsumed ?? item.creditsSpent ?? 0;
-                  const creditsAllocated = item.creditsAllocated ?? 19.00;
-                  const assignedSeats = item.assignedSeats ?? 1;
-
-                  const totalTkn = (item.inputTokens ?? 0) + (item.outputTokens ?? 0);
-                  const inputPct = totalTkn > 0 ? ((item.inputTokens ?? 0) / totalTkn) * 100 : 0;
-
-                  return (
-                    <div
-                      key={idx}
-                      className={cn(
-                        "relative overflow-hidden rounded-xl border p-3.5 transition-all duration-300",
-                        isWasting
-                          ? "bg-rose-50/20 border-rose-100/70"
-                          : "bg-white border-slate-100 hover:border-indigo-100 hover:shadow-sm"
-                      )}
-                    >
-                      {/* Top Row: User/Model & Leak */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
-                          {/* Initials Badge */}
-                          <div className={cn(
-                            "flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold border",
-                            isWasting
-                              ? "bg-rose-50 text-rose-600 border-rose-100"
-                              : "bg-indigo-50 text-indigo-650 border-indigo-100"
-                          )}>
-                            {teamName.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="font-bold text-[12px] text-slate-800 flex items-center gap-2">
-                              {teamName}
-                              {isWasting && (
-                                <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-650 ring-1 ring-inset ring-rose-500/10 animate-pulse">
-                                  <span className="mr-1 h-1 w-1 rounded-full bg-rose-500" />
-                                  Wasting $19/mo
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[10px] text-slate-450 flex items-center gap-1 mt-0.5">
-                              <span className="text-slate-455">LLM Model:</span>
-                              <span className={cn(
-                                "font-mono rounded px-1 py-0.2 text-[9px]",
-                                isWasting ? "bg-slate-100 text-slate-450" : "bg-indigo-50 text-indigo-500 font-semibold"
-                              )}>
-                                {primaryModel}
-                              </span>
-                              {assignedSeats > 1 && (
-                                <>
-                                  <span className="mx-1.5 text-slate-300">•</span>
-                                  <span>Seats: {assignedSeats}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Financial leak */}
-                        <div className="text-right">
-                          <span className="text-[9px] font-semibold tracking-wide text-slate-450 block uppercase">
-                            {isWasting ? "Financial Leak" : "Credits Consumed"}
-                          </span>
-                          <span className={cn(
-                            "text-[12px] font-bold tabular-nums",
-                            isWasting ? "text-rose-650 font-extrabold" : "text-slate-700"
-                          )}>
-                            {isWasting ? `$${(assignedSeats * 19).toFixed(2)}` : `$${creditsConsumed.toFixed(2)}`}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Bottom Row: Distribution / Progress bar */}
-                      {!isWasting && (
-                        <div className="mt-3 pt-2.5 border-t border-slate-100/60">
-                          {item.creditsAllocated !== undefined ? (
-                            <>
-                              <div className="flex items-center justify-between text-[9px] text-slate-450 mb-1">
-                                <span className="font-semibold text-slate-400">Credit Pool Utilization ({ratioPct.toFixed(0)}%)</span>
-                                <span className="tabular-nums font-medium text-slate-500">
-                                  Consumed: ${creditsConsumed.toFixed(2)} / ${creditsAllocated.toFixed(2)} Allocated
-                                </span>
-                              </div>
-                              {/* Progress bar */}
-                              <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden flex">
-                                <div
-                                  style={{ width: `${ratioPct}%` }}
-                                  className={cn(
-                                    "h-full transition-all duration-300",
-                                    item.status === "UNDER_UTILIZED" ? "bg-amber-500" : "bg-emerald-500"
-                                  )}
-                                  title={`Consumed: ${ratioPct.toFixed(1)}%`}
-                                />
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="flex items-center justify-between text-[9px] text-slate-450 mb-1">
-                                <span className="font-semibold text-slate-400">Workload Distribution</span>
-                                <span className="tabular-nums font-medium text-slate-500">
-                                  In: {(item.inputTokens ?? 0).toLocaleString()} | Out: {(item.outputTokens ?? 0).toLocaleString()}
-                                </span>
-                              </div>
-                              {/* Stacked bar */}
-                              <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden flex">
-                                <div
-                                  style={{ width: `${inputPct}%` }}
-                                  className="bg-indigo-500 h-full transition-all duration-300"
-                                  title={`Input: ${inputPct.toFixed(0)}%`}
-                                />
-                                <div
-                                  style={{ width: `${100 - inputPct}%` }}
-                                  className="bg-purple-450 h-full transition-all duration-300"
-                                  title={`Output: ${(100 - inputPct).toFixed(0)}%`}
-                                />
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
+              {/* Pooled AI Capacity Status Banner */}
+              {providerKey === "GITHUB_COPILOT" && (
+                <div className="flex items-center justify-between rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-[11px] font-semibold text-slate-200 shadow-md">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-400"></span>
+                    </span>
+                    <span>Pooled AI Credit Capacity:</span>
+                  </div>
+                  <span className="text-indigo-400 font-bold tabular-nums whitespace-nowrap">
+                    ${((integration?.wastedSeats ?? 0) * 19).toFixed(2)} Stranded
+                  </span>
+                </div>
               )}
+
+              {/* Copilot Optimization Policy */}
+              {providerKey === "GITHUB_COPILOT" && (
+                <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-3.5 text-xs text-slate-650 shadow-sm">
+                  <h4 className="font-bold text-slate-800 mb-2.5 flex items-center gap-1.5">
+                    <svg className="h-3.5 w-3.5 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="16" x2="12" y2="12" />
+                      <line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                    Copilot Optimization Policy
+                  </h4>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-[11px] leading-relaxed">
+                    <div>
+                      <span className="text-slate-400 block font-medium">Idle Threshold</span>
+                      <span className="font-semibold text-slate-700">30 Days (No activity)</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-medium">Telemetry Resolution</span>
+                      <span className="font-semibold text-slate-700">Hourly API Sync</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-medium">Public Code Filter</span>
+                      <span className="font-semibold text-amber-600">Blocked (Enforced)</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-medium">Allowed LLMs</span>
+                      <span className="font-semibold text-slate-700">GPT-4o, Claude 3.5, Gemini 1.5</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* List Container */}
+              <div className="space-y-3">
+                {providerKey === "GITHUB_COPILOT" && report && !Array.isArray(report) ? (
+                  report.individualSeats?.map((item: any, idx: number) => {
+                    const isActive = item.status === "ACTIVE";
+                    const username = item.username || "unknown-dev";
+                    const avatarInitials = username.slice(0, 2).toUpperCase();
+
+                    // Format lastActivityAt to a clean readable string
+                    let activityStr = "Never active";
+                    if (item.lastActivityAt) {
+                      try {
+                        activityStr = `Active ${new Date(item.lastActivityAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        })}`;
+                      } catch (e) {
+                        activityStr = `Active ${item.lastActivityAt}`;
+                      }
+                    }
+
+                    return (
+                      <div
+                        key={idx}
+                        className={cn(
+                          "relative overflow-hidden rounded-xl border p-3.5 transition-all duration-300",
+                          !isActive
+                            ? "bg-rose-50/20 border-rose-100/70"
+                            : "bg-white border-slate-100 hover:border-indigo-100 hover:shadow-sm"
+                        )}
+                      >
+                        {/* Top Row: User/Model & Leak */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            {/* Initials Badge */}
+                            <div className={cn(
+                              "flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold border",
+                              !isActive
+                                ? "bg-rose-50 text-rose-600 border-rose-100"
+                                : "bg-indigo-50 text-indigo-650 border-indigo-100"
+                            )}>
+                              {avatarInitials}
+                            </div>
+                            <div>
+                              <div className="font-bold text-[12px] text-slate-800 flex items-center gap-2">
+                                {username}
+                                {!isActive ? (
+                                  <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-650 ring-1 ring-inset ring-rose-500/10 animate-pulse">
+                                    <span className="mr-1 h-1 w-1 rounded-full bg-rose-500" />
+                                    ⚠️ Idle License: Wasting $19.00/mo
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-[9px] font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-550/10">
+                                    {item.primaryModel}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                <span>{activityStr}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Financial Leak / Status */}
+                          <div className="text-right">
+                            <span className="text-[9px] font-semibold tracking-wide text-slate-450 block uppercase">
+                              {!isActive ? "Financial Leak" : "Seat Status"}
+                            </span>
+                            <span className={cn(
+                              "text-[12px] font-bold tabular-nums",
+                              !isActive ? "text-rose-655 font-extrabold" : "text-emerald-600"
+                            )}>
+                              {!isActive ? "$19.00" : "Active"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  // Fallback for array-based reports (legacy GITHUB_COPILOT or FIGMA)
+                  Array.isArray(report) && report.map((item, idx) => {
+                    const isWasting = item.status === "ABSOLUTE_LEAK" || (item.inputTokens === 0 && item.outputTokens === 0) || (item.creditsConsumed === 0 && item.assignedSeats > 0);
+                    const ratioPct = item.creditsAllocated > 0 ? ((item.creditsConsumed ?? 0) / item.creditsAllocated) * 100 : 0;
+                    
+                    const teamName = item.teamName || item.developer || "Unknown Team";
+                    const primaryModel = item.primaryModel || item.model || "None";
+                    const creditsConsumed = item.creditsConsumed ?? item.creditsSpent ?? 0;
+                    const creditsAllocated = item.creditsAllocated ?? 19.00;
+                    const assignedSeats = item.assignedSeats ?? 1;
+
+                    const totalTkn = (item.inputTokens ?? 0) + (item.outputTokens ?? 0);
+                    const inputPct = totalTkn > 0 ? ((item.inputTokens ?? 0) / totalTkn) * 100 : 0;
+
+                    return (
+                      <div
+                        key={idx}
+                        className={cn(
+                          "relative overflow-hidden rounded-xl border p-3.5 transition-all duration-300",
+                          isWasting
+                            ? "bg-rose-50/20 border-rose-100/70"
+                            : "bg-white border-slate-100 hover:border-indigo-100 hover:shadow-sm"
+                        )}
+                      >
+                        {/* Top Row: User/Model & Leak */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            {/* Initials Badge */}
+                            <div className={cn(
+                              "flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold border",
+                              isWasting
+                                ? "bg-rose-50 text-rose-600 border-rose-100"
+                                : "bg-indigo-50 text-indigo-650 border-indigo-100"
+                            )}>
+                              {teamName.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-bold text-[12px] text-slate-800 flex items-center gap-2">
+                                {teamName}
+                                {isWasting && (
+                                  <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-650 ring-1 ring-inset ring-rose-500/10 animate-pulse">
+                                    <span className="mr-1 h-1 w-1 rounded-full bg-rose-500" />
+                                    Wasting $19/mo
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[10px] text-slate-450 flex items-center gap-1 mt-0.5">
+                                <span className="text-slate-455">LLM Model:</span>
+                                <span className={cn(
+                                  "font-mono rounded px-1 py-0.2 text-[9px]",
+                                  isWasting ? "bg-slate-100 text-slate-450" : "bg-indigo-50 text-indigo-500 font-semibold"
+                                )}>
+                                  {primaryModel}
+                                </span>
+                                {assignedSeats > 1 && (
+                                  <>
+                                    <span className="mx-1.5 text-slate-300">•</span>
+                                    <span>Seats: {assignedSeats}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Financial leak */}
+                          <div className="text-right">
+                            <span className="text-[9px] font-semibold tracking-wide text-slate-455 block uppercase">
+                              {isWasting ? "Financial Leak" : "Credits Consumed"}
+                            </span>
+                            <span className={cn(
+                              "text-[12px] font-bold tabular-nums",
+                              isWasting ? "text-rose-650 font-extrabold" : "text-slate-700"
+                            )}>
+                              {isWasting ? `$${(assignedSeats * 19).toFixed(2)}` : `$${creditsConsumed.toFixed(2)}`}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Bottom Row: Distribution / Progress bar */}
+                        {!isWasting && (
+                          <div className="mt-3 pt-2.5 border-t border-slate-100/60">
+                            {item.creditsAllocated !== undefined ? (
+                              <>
+                                <div className="flex items-center justify-between text-[9px] text-slate-450 mb-1">
+                                  <span className="font-semibold text-slate-400">Credit Pool Utilization ({ratioPct.toFixed(0)}%)</span>
+                                  <span className="tabular-nums font-medium text-slate-500">
+                                    Consumed: ${creditsConsumed.toFixed(2)} / ${creditsAllocated.toFixed(2)} Allocated
+                                  </span>
+                                </div>
+                                {/* Progress bar */}
+                                <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden flex">
+                                  <div
+                                    style={{ width: `${ratioPct}%` }}
+                                    className={cn(
+                                      "h-full transition-all duration-300",
+                                      item.status === "UNDER_UTILIZED" ? "bg-amber-500" : "bg-emerald-500"
+                                    )}
+                                    title={`Consumed: ${ratioPct.toFixed(1)}%`}
+                                  />
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-center justify-between text-[9px] text-slate-450 mb-1">
+                                  <span className="font-semibold text-slate-400">Workload Distribution</span>
+                                  <span className="tabular-nums font-medium text-slate-500">
+                                    In: {(item.inputTokens ?? 0).toLocaleString()} | Out: {(item.outputTokens ?? 0).toLocaleString()}
+                                  </span>
+                                </div>
+                                {/* Stacked bar */}
+                                <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden flex">
+                                  <div
+                                    style={{ width: `${inputPct}%` }}
+                                    className="bg-indigo-500 h-full transition-all duration-300"
+                                    title={`Input: ${inputPct.toFixed(0)}%`}
+                                  />
+                                  <div
+                                    style={{ width: `${100 - inputPct}%` }}
+                                    className="bg-purple-455 h-full transition-all duration-300"
+                                    title={`Output: ${(100 - inputPct).toFixed(0)}%`}
+                                  />
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
 
             {/* Bottom bar */}
-            <div className="flex justify-end pt-4 mt-4 border-t border-slate-100">
+            <div className="flex justify-end pt-4 mt-4 border-t border-slate-100 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setIsTelemetryOpen(false)}

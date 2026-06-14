@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import {
   Home,
   CreditCard,
@@ -29,6 +29,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useUser();
 
   return (
     <>
@@ -159,15 +160,20 @@ export function Sidebar() {
             <UserButton
               appearance={{
                 elements: {
-                  avatarBox: "h-8 w-8",
+                  avatarBox: "h-8 w-8 shrink-0",
+                  userButtonOuterIdentifier: "hidden",
                 },
               }}
-              showName={!collapsed}
             />
-            {!collapsed && (
-              <p className="truncate text-xs text-slate-400">
-                Manage account
-              </p>
+            {!collapsed && user && (
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="truncate text-xs font-semibold text-slate-800 leading-tight">
+                  {user.fullName || user.primaryEmailAddress?.emailAddress.split("@")[0]}
+                </span>
+                <span className="truncate text-[10px] text-slate-400 font-medium mt-0.5">
+                  Manage account
+                </span>
+              </div>
             )}
           </div>
         </div>
