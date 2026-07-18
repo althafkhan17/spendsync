@@ -4,6 +4,8 @@ import React, { useState, useTransition, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { disconnectIntegration, triggerAudit } from "@/app/actions/integrations";
 import { connectGithubCopilot } from "@/app/actions/integrations/connect-github";
+import { connectAnthropic } from "@/app/actions/integrations/connect-anthropic";
+import { Key, ShieldAlert, Eye, EyeOff } from "lucide-react";
 import type { IntegrationRow } from "@/app/actions/integrations";
 import { cn } from "@/lib/utils";
 
@@ -22,15 +24,15 @@ type ProviderMeta = {
   icon: React.ReactNode;
 };
 
-const PROVIDERS: Record<string, ProviderMeta> = {
+export const PROVIDERS: Record<string, ProviderMeta> = {
   FIGMA: {
     name: "Figma",
     description: "Audit editor seats and identify inactive designers across your workspace.",
     permission: "Requires Read-Only Organization Admin Access",
-    gradient: "from-[#a259ff]/5 to-[#ff7262]/5",
-    iconBg: "bg-gradient-to-br from-[#a259ff] to-[#ff7262]",
+    gradient: "from-[#00ed64]/4 to-transparent",
+    iconBg: "bg-[#001e2b]",
     iconColor: "text-white",
-    accentColor: "text-[#a259ff]",
+    accentColor: "text-[#00684a]",
     icon: (
       <svg viewBox="0 0 38 57" fill="none" className="h-5 w-5">
         <path d="M19 28.5C19 23.2533 23.2533 19 28.5 19C33.7467 19 38 23.2533 38 28.5C38 33.7467 33.7467 38 28.5 38C23.2533 38 19 33.7467 19 28.5Z" fill="white"/>
@@ -45,10 +47,10 @@ const PROVIDERS: Record<string, ProviderMeta> = {
     name: "Slack",
     description: "Monitor workspace member activity and flag dormant user accounts.",
     permission: "Requires Read-Only Workspace Admin Access",
-    gradient: "from-[#4A154B]/5 to-[#E01E5A]/5",
-    iconBg: "bg-gradient-to-br from-[#4A154B] to-[#611f69]",
+    gradient: "from-[#00ed64]/4 to-transparent",
+    iconBg: "bg-[#001e2b]",
     iconColor: "text-white",
-    accentColor: "text-[#4A154B]",
+    accentColor: "text-[#00684a]",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
         <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" fill="white"/>
@@ -59,10 +61,10 @@ const PROVIDERS: Record<string, ProviderMeta> = {
     name: "Zoom",
     description: "Track licensed seats and identify users who haven't joined meetings recently.",
     permission: "Requires Read-Only Account Admin Access",
-    gradient: "from-[#0b5cff]/5 to-[#0e72ed]/5",
-    iconBg: "bg-gradient-to-br from-[#0b5cff] to-[#0e72ed]",
+    gradient: "from-[#00ed64]/4 to-transparent",
+    iconBg: "bg-[#001e2b]",
     iconColor: "text-white",
-    accentColor: "text-[#0b5cff]",
+    accentColor: "text-[#00684a]",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
         <path d="M3.5 6.5C3.5 5.39543 4.39543 4.5 5.5 4.5H14C15.1046 4.5 16 5.39543 16 6.5V17.5C16 18.6046 15.1046 19.5 14 19.5H5.5C4.39543 19.5 3.5 18.6046 3.5 17.5V6.5Z" fill="white"/>
@@ -74,10 +76,10 @@ const PROVIDERS: Record<string, ProviderMeta> = {
     name: "GitHub",
     description: "Audit organization seats and detect developers with zero recent commits.",
     permission: "Requires Read-Only Organization Access",
-    gradient: "from-[#24292f]/5 to-[#57606a]/5",
-    iconBg: "bg-gradient-to-br from-[#24292f] to-[#57606a]",
+    gradient: "from-[#00ed64]/4 to-transparent",
+    iconBg: "bg-[#001e2b]",
     iconColor: "text-white",
-    accentColor: "text-[#24292f]",
+    accentColor: "text-[#00684a]",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
         <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z" fill="white"/>
@@ -88,13 +90,28 @@ const PROVIDERS: Record<string, ProviderMeta> = {
     name: "GitHub Copilot",
     description: "Audit Copilot seat assignments and flag inactive developers across your organization.",
     permission: "Requires Fine-Grained PAT with Copilot Organization admin scopes.",
-    gradient: "from-[#0969da]/5 to-[#8a63f2]/5",
-    iconBg: "bg-gradient-to-br from-[#0969da] to-[#8a63f2]",
+    gradient: "from-[#00ed64]/4 to-transparent",
+    iconBg: "bg-[#001e2b]",
     iconColor: "text-white",
-    accentColor: "text-[#0969da]",
+    accentColor: "text-[#00684a]",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
         <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z" fill="white"/>
+      </svg>
+    ),
+  },
+  ANTHROPIC: {
+    name: "Anthropic Claude",
+    description: "Track real-time token consumption, monitor usage spikes, and set a safety budget threshold.",
+    permission: "Requires API Key and Safety Threshold (USD)",
+    gradient: "from-[#00ed64]/4 to-transparent",
+    iconBg: "bg-[#001e2b]",
+    iconColor: "text-white",
+    accentColor: "text-[#00684a]",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+        <circle cx="12" cy="12" r="4" />
       </svg>
     ),
   },
@@ -124,6 +141,9 @@ export function IntegrationCard({
   const [modalError, setModalError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [threshold, setThreshold] = useState("50.00");
+  const [showKey, setShowKey] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -199,17 +219,17 @@ export function IntegrationCard({
     <div
       id={`integration-card-${providerKey.toLowerCase()}`}
       className={cn(
-        "group relative flex flex-col h-full rounded-xl border bg-white shadow-sm transition-all duration-300",
+        "group relative flex flex-col h-full rounded-lg border bg-white shadow-sm transition-all duration-300",
         "hover:shadow-md hover:-translate-y-0.5",
         isConnected
-          ? "border-emerald-200/80 ring-1 ring-emerald-100/50"
-          : "border-slate-200/60 hover:border-slate-300/80"
+          ? "border-[#00ed64]/30"
+          : "border-hairline"
       )}
     >
       {/* Subtle gradient overlay */}
       <div
         className={cn(
-          "absolute inset-0 rounded-xl bg-gradient-to-br opacity-0 transition-opacity duration-300 group-hover:opacity-100",
+          "absolute inset-0 rounded-lg bg-gradient-to-br opacity-0 transition-opacity duration-300 group-hover:opacity-100",
           meta.gradient
         )}
       />
@@ -222,28 +242,28 @@ export function IntegrationCard({
             {/* Provider icon */}
             <div
               className={cn(
-                "flex h-11 w-11 items-center justify-center rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-105",
+                "flex h-11 w-11 items-center justify-center rounded-lg shadow-sm transition-transform duration-300 group-hover:scale-105",
                 meta.iconBg
               )}
             >
               {meta.icon}
             </div>
             <div>
-              <h3 className="text-[15px] font-semibold text-slate-900">
+              <h3 className="text-[15px] font-semibold text-ink">
                 {meta.name}
               </h3>
               <span
                 className={cn(
                   "inline-flex items-center gap-1.5 text-xs font-medium mt-0.5",
-                  isConnected ? "text-emerald-600" : "text-slate-400"
+                  isConnected ? "text-semantic-success" : "text-ink-subtle"
                 )}
               >
                 <span
                   className={cn(
                     "h-1.5 w-1.5 rounded-full",
                     isConnected
-                      ? "bg-emerald-500 animate-pulse"
-                      : "bg-slate-300"
+                      ? "bg-[#00ed64] animate-pulse"
+                      : "bg-slate-400"
                   )}
                 />
                 {isConnected ? "Active Audit Mode" : "Not Connected"}
@@ -253,15 +273,15 @@ export function IntegrationCard({
         </div>
 
         {/* Description */}
-        <p className="mt-3.5 text-[13px] leading-relaxed text-slate-500 min-h-[38px] flex items-start">
+        <p className="mt-3.5 text-[13px] leading-relaxed text-ink-muted min-h-[38px] flex items-start">
           {meta.description}
         </p>
 
         {/* Permission badge */}
         <div className="mt-3 min-h-[36px] flex items-center">
-          <span className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-500 ring-1 ring-slate-200/60 leading-normal">
+          <span className="inline-flex items-center gap-1 rounded-md bg-surface-3 px-2 py-1 text-[11px] font-medium text-ink-subtle border border-hairline leading-normal">
             <svg
-              className="h-3 w-3 text-slate-400"
+              className="h-3 w-3 text-ink-tertiary"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -279,35 +299,47 @@ export function IntegrationCard({
         {/* Last audit info (when connected) */}
         {isConnected && (
           <div className="mt-3">
-            {integration?.wastedSeats !== null && integration?.wastedSeats !== undefined ? (
+            {providerKey === "ANTHROPIC" ? (
+              <div className="rounded-lg bg-[#c3f0d2]/70 px-4 py-3.5 text-[11.5px] text-[#00684a] border border-[#00ed64]/20 shadow-sm leading-relaxed">
+                <span className="font-bold flex items-center gap-1.5 mb-1.5 text-[#00684a]">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00ed64] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00a35c]"></span>
+                  </span>
+                  Active Monitor Mode:
+                </span>
+                Auditing is fully active. Spent logs are evaluated every 15 minutes. Safety limit:{" "}
+                <span className="font-bold text-[#00684a]">${Number(integration?.refreshToken || 50.0).toFixed(2)} USD/mo</span>.
+                {integration?.wastedAmount !== null && (
+                  <span className="block mt-1">
+                    Current month spend: <span className="font-bold text-[#00684a]">${Number(integration.wastedAmount).toFixed(2)} USD</span>.
+                  </span>
+                )}
+              </div>
+            ) : integration?.wastedSeats !== null && integration?.wastedSeats !== undefined ? (
               <div className="space-y-2">
-                <div className="rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/5 px-4 py-3.5 text-[11.5px] text-emerald-900 border border-emerald-500/20 shadow-sm leading-relaxed">
-                  <span className="font-bold flex items-center gap-1.5 mb-1.5 text-emerald-800">
+                <div className="rounded-lg bg-[#c3f0d2] px-4 py-3.5 text-[11.5px] text-[#00684a] border border-[#00ed64]/20 shadow-sm leading-relaxed">
+                  <span className="font-bold flex items-center gap-1.5 mb-1.5 text-[#00684a]">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00a35c]"></span>
                     </span>
                     Audit complete:
                   </span>
                   {providerKey === "GITHUB_COPILOT" ? (
                     <>
-                      {integration.wastedSeats} inactive developer seat{integration.wastedSeats === 1 ? "" : "s"} found. Saving you <span className="font-bold text-emerald-700">${(integration.wastedAmount ?? 0).toLocaleString()}/mo</span>.
+                      {integration.wastedSeats} inactive developer seat{integration.wastedSeats === 1 ? "" : "s"} found. Saving you <span className="font-bold text-[#00684a]">${(integration.wastedAmount ?? 0).toLocaleString()}/mo</span>.
                       <button
                         onClick={() => setIsTelemetryOpen(true)}
-                        className="ml-1.5 inline-flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
+                        className="ml-1.5 inline-flex items-center gap-1 font-bold text-[#00684a] hover:text-[#00b545] underline cursor-pointer"
                       >
                         View Telemetry
-                        <svg className="h-3 w-3 inline-block align-middle ml-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                          <polyline points="15 3 21 3 21 9" />
-                          <line x1="10" y1="14" x2="21" y2="3" />
-                        </svg>
                       </button>
                     </>
                   ) : (
                     <>
                       {integration.wastedSeats} inactive seat{integration.wastedSeats === 1 ? "" : "s"} found. Saving you{" "}
-                      <span className="font-bold text-emerald-700">
+                      <span className="font-bold text-[#00684a]">
                         {integration.wastedAmount !== null && integration.wastedAmount > 0
                           ? (integration.wastedAmount >= 1000 ? "₹" : "$") + integration.wastedAmount.toLocaleString()
                           : (providerKey === "FIGMA" ? "₹4,800" : "$60")}
@@ -317,8 +349,8 @@ export function IntegrationCard({
                 </div>
               </div>
             ) : integration?.lastAuditAt ? (
-              <div className="rounded-xl bg-slate-50 border border-slate-200/60 px-4 py-3 text-[11px] text-slate-600 leading-relaxed shadow-sm">
-                <span className="font-semibold text-slate-700">Last audit:</span>{" "}
+              <div className="rounded-lg bg-surface-3 border border-hairline px-4 py-3 text-[11px] text-ink-subtle leading-relaxed shadow-sm">
+                <span className="font-semibold text-ink-muted">Last audit:</span>{" "}
                 {new Date(integration.lastAuditAt).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -328,7 +360,7 @@ export function IntegrationCard({
                 })}
               </div>
             ) : (
-              <div className="rounded-xl bg-amber-50/60 border border-amber-200/50 px-4 py-3 text-[11px] text-amber-700 leading-relaxed shadow-sm">
+              <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-[11px] text-amber-600 leading-relaxed shadow-sm">
                 <span className="font-semibold">Pending:</span> First audit will run on the next scheduled cycle.
               </div>
             )}
@@ -349,15 +381,11 @@ export function IntegrationCard({
                       id={`audit-${providerKey.toLowerCase()}`}
                       onClick={handleRunAudit}
                       disabled={isAuditing}
-                      className={cn(
-                        "flex-1 rounded-lg px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm transition-all duration-200 cursor-pointer text-center flex items-center justify-center gap-2",
-                        "hover:shadow-md hover:brightness-110 active:scale-[0.98] disabled:opacity-60",
-                        meta.iconBg
-                      )}
+                      className="flex-1 rounded-full h-10 px-5 text-[13px] font-semibold text-[#001e2b] bg-[#00ed64] hover:bg-[#00b545] shadow-sm transition-all duration-200 cursor-pointer text-center flex items-center justify-center gap-2 hover:shadow-md active:scale-[0.98] disabled:opacity-60"
                     >
                       {isAuditing ? (
                         <>
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#001e2b] border-t-transparent" />
                           Auditing...
                         </>
                       ) : (
@@ -368,7 +396,7 @@ export function IntegrationCard({
                       id={`disconnect-${providerKey.toLowerCase()}`}
                       onClick={() => setShowConfirm(true)}
                       disabled={isAuditing}
-                      className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] font-medium text-slate-600 transition-all duration-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 disabled:opacity-40"
+                      className="rounded-full border border-slate-200 bg-slate-50 h-10 px-5 flex items-center justify-center text-[13px] font-medium text-slate-600 transition-all duration-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 disabled:opacity-40"
                     >
                       Disconnect
                     </button>
@@ -388,14 +416,14 @@ export function IntegrationCard({
                     <button
                       onClick={() => setShowConfirm(false)}
                       disabled={isPending}
-                      className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                      className="flex-1 rounded-full border border-slate-200 bg-white h-10 px-4 flex items-center justify-center text-[13px] font-medium text-slate-600 transition-colors hover:bg-slate-50"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleDisconnect}
                       disabled={isPending}
-                      className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-[12px] font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+                      className="flex-1 rounded-full bg-red-600 h-10 px-4 flex items-center justify-center text-[13px] font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-60"
                     >
                       {isPending ? "Removing…" : "Confirm"}
                     </button>
@@ -420,16 +448,21 @@ export function IntegrationCard({
                         setModalError(null);
                         setOrgSlug("");
                         setGithubToken("");
+                      } else if (providerKey === "ANTHROPIC") {
+                        setIsModalOpen(true);
+                        setModalError(null);
+                        setApiKey("");
+                        setThreshold("50.00");
                       } else {
                         alert(
-                          `${meta.name} integration is coming soon. Figma is available now!`
+                           `${meta.name} integration is coming soon. Figma is available now!`
                         );
                       }
                     }
                   : undefined
               }
               className={cn(
-                "flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm transition-all duration-200 cursor-pointer",
+                "flex w-full items-center justify-center rounded-full h-10 px-5 text-[13px] font-semibold text-white shadow-sm transition-all duration-200 cursor-pointer text-center",
                 "hover:shadow-md hover:brightness-110 active:scale-[0.98]",
                 meta.iconBg
               )}
@@ -443,141 +476,283 @@ export function IntegrationCard({
 
       {/* Modal Dialog */}
       {isModalOpen && mounted && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
-            onClick={() => setIsModalOpen(false)}
-          />
-          
-          {/* Dialog Container */}
-          <div className="relative z-10 w-full max-w-md transform overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200">
-            {/* Close button */}
-            <button
+        providerKey === "ANTHROPIC" ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
               onClick={() => setIsModalOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
+            />
+            
+            {/* Dialog Container */}
+            <div className="relative z-10 w-full max-w-md transform overflow-hidden rounded-lg border border-[#1c2d38] bg-[#001e2b] p-6 text-white shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200">
+              {/* Close button */}
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-[#003d4f]/30 hover:text-white transition-colors cursor-pointer"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
 
-            {/* Icon + Title */}
-            <div className="flex items-center gap-3">
-              <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm", meta.iconBg)}>
-                {meta.icon}
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900">
-                  Connect GitHub Copilot
-                </h3>
-                <p className="text-xs text-slate-400 font-medium">Configure secure API access</p>
-              </div>
-            </div>
-
-            <p className="mt-3 text-xs leading-relaxed text-slate-500">
-              Audit Copilot seat assignments and automatically flag inactive developers across your organization.
-            </p>
-
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setIsSubmitting(true);
-                setModalError(null);
-                try {
-                  const res = await connectGithubCopilot(orgSlug, githubToken);
-                  if (res.success) {
-                    setIsModalOpen(false);
-                  } else {
-                    setModalError(res.error || "Failed to save integration");
-                  }
-                } catch (err: any) {
-                  setModalError(err.message || "An unexpected error occurred");
-                } finally {
-                  setIsSubmitting(false);
-                }
-              }}
-              className="mt-4 space-y-4"
-            >
-              {/* Org Slug input */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 block">
-                  GitHub Organization Slug
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g., althaf-consulting-labs"
-                  value={orgSlug}
-                  onChange={(e) => setOrgSlug(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-[13px] text-slate-950 placeholder-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                />
-                <p className="text-[11px] text-slate-400">
-                  Enter your exact GitHub Organization URL slug.
-                </p>
-              </div>
-
-              {/* Secure PAT input */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 block">
-                  Fine-Grained Personal Access Token (PAT)
-                </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="ghp_... or github_pat_..."
-                  value={githubToken}
-                  onChange={(e) => setGithubToken(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-[13px] text-slate-950 placeholder-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                />
-                <p className="text-[11px] text-slate-400 leading-normal">
-                  Create a PAT with read organization billing scopes on{" "}
-                  <a
-                    href="https://github.com/settings/tokens"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline inline-flex items-center gap-0.5"
-                  >
-                    github.com/settings/tokens
-                    <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                      <polyline points="15 3 21 3 21 9" />
-                      <line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
-                  </a>
-                  . Ensure organization permission is selected.
-                </p>
-              </div>
-
-              {/* Error Display */}
-              {modalError && (
-                <div className="rounded-lg bg-rose-50 border border-rose-100 p-2.5 text-xs text-rose-600 font-medium leading-relaxed">
-                  ⚠️ {modalError}
+              {/* Icon + Title */}
+              <div className="flex items-center gap-3">
+                <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg text-white shadow-sm", meta.iconBg)}>
+                  {meta.icon}
                 </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  disabled={isSubmitting}
-                  className="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-40"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center"
-                >
-                  {isSubmitting ? "Connecting..." : "Verify & Activate Audit Mode"}
-                </button>
+                <div>
+                  <h3 className="text-lg font-bold text-white tracking-tight">
+                    Connect Anthropic Claude
+                  </h3>
+                  <p className="text-xs text-slate-400 font-medium">Configure token consumption safety limits</p>
+                </div>
               </div>
-            </form>
+
+              <p className="mt-3 text-xs leading-relaxed text-slate-400">
+                Track real-time token consumption balances, monitor anomalous spikes, and prevent budget leaks.
+              </p>
+
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setIsSubmitting(true);
+                  setModalError(null);
+                  try {
+                    const res = await connectAnthropic(apiKey, threshold);
+                    if (res.success) {
+                      setIsModalOpen(false);
+                    } else {
+                      setModalError(res.error || "Failed to save integration");
+                    }
+                  } catch (err: any) {
+                    setModalError(err.message || "An unexpected error occurred");
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
+                className="mt-4 space-y-4 text-left"
+              >
+                {/* API Key */}
+                <div className="space-y-1.5">
+                  <label htmlFor="modal-claude-api-key" className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <Key className="h-3.5 w-3.5 text-slate-400" />
+                    Anthropic API Key
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="modal-claude-api-key"
+                      type={showKey ? "text" : "password"}
+                      required
+                      placeholder="sk-ant-api53-..."
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      className="w-full h-11 rounded-md border border-[#1c2d38] bg-[#003d4f]/20 px-3 pr-10 text-[13px] text-white placeholder-slate-500 focus:border-[#00ed64] focus:ring-1 focus:ring-[#00ed64] focus:outline-none transition-all font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowKey(!showKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                      {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Threshold */}
+                <div className="space-y-1.5">
+                  <label htmlFor="modal-claude-threshold" className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <ShieldAlert className="h-3.5 w-3.5 text-slate-400" />
+                    Monthly Burn Safety Threshold (USD)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold select-none">
+                      $
+                    </span>
+                    <input
+                      id="modal-claude-threshold"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      required
+                      placeholder="50.00"
+                      value={threshold}
+                      onChange={(e) => setThreshold(e.target.value)}
+                      className="w-full h-11 rounded-md border border-[#1c2d38] bg-[#003d4f]/20 pl-7 pr-3 text-[13px] text-white placeholder-slate-500 focus:border-[#00ed64] focus:ring-1 focus:ring-[#00ed64] focus:outline-none transition-all font-semibold tabular-nums"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-normal">
+                    We will alert you instantly if your workspace spend surpasses this custom dollar amount.
+                  </p>
+                </div>
+
+                {/* Error Display */}
+                {modalError && (
+                  <div className="flex items-start gap-2 rounded-md bg-red-950/40 border border-red-500/30 p-3 text-xs text-red-400 font-medium">
+                    <span className="shrink-0 mt-0.5">⚠️</span>
+                    <span>{modalError}</span>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    disabled={isSubmitting}
+                    className="flex-1 rounded-full border border-[#1c2d38] bg-transparent h-10 px-4 flex items-center justify-center text-[13px] font-semibold text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-40"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 rounded-full bg-[#00ed64] hover:bg-[#00b545] h-10 px-4 flex items-center justify-center text-[13px] font-semibold text-[#001e2b] shadow-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-60 cursor-pointer border border-transparent"
+                  >
+                    {isSubmitting ? "Connecting..." : "Connect Engine"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>,
+        ) : (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+              onClick={() => setIsModalOpen(false)}
+            />
+            
+            {/* Dialog Container */}
+            <div className="relative z-10 w-full max-w-md transform overflow-hidden rounded-lg border border-hairline bg-white p-6 shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200 text-ink">
+              {/* Close button */}
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="absolute right-4 top-4 rounded-lg p-1.5 text-ink-subtle hover:bg-slate-100 hover:text-ink transition-colors cursor-pointer"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+
+              {/* Icon + Title */}
+              <div className="flex items-center gap-3">
+                <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg text-white shadow-sm", meta.iconBg)}>
+                  {meta.icon}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-ink">
+                    Connect GitHub Copilot
+                  </h3>
+                  <p className="text-xs text-[#5c6c7a] font-medium">Configure secure API access</p>
+                </div>
+              </div>
+
+              <p className="mt-3 text-xs leading-relaxed text-slate-500">
+                Audit Copilot seat assignments and automatically flag inactive developers across your organization.
+              </p>
+
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setIsSubmitting(true);
+                  setModalError(null);
+                  try {
+                    const res = await connectGithubCopilot(orgSlug, githubToken);
+                    if (res.success) {
+                      setIsModalOpen(false);
+                    } else {
+                      setModalError(res.error || "Failed to save integration");
+                    }
+                  } catch (err: any) {
+                    setModalError(err.message || "An unexpected error occurred");
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
+                className="mt-4 space-y-4"
+              >
+                {/* Org Slug input */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-ink block">
+                    GitHub Organization Slug
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g., althaf-consulting-labs"
+                    value={orgSlug}
+                    onChange={(e) => setOrgSlug(e.target.value)}
+                    className="w-full rounded-md border border-hairline-strong bg-white px-3 py-2.5 text-[13px] text-ink placeholder-ink-tertiary focus:border-[#00684a] focus:ring-[#00684a] focus:outline-none transition-all"
+                  />
+                  <p className="text-[11px] text-ink-tertiary">
+                    Enter your exact GitHub Organization URL slug.
+                  </p>
+                </div>
+
+                {/* Secure PAT input */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-ink block">
+                    Fine-Grained Personal Access Token (PAT)
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="ghp_... or github_pat_..."
+                    value={githubToken}
+                    onChange={(e) => setGithubToken(e.target.value)}
+                    className="w-full rounded-md border border-hairline-strong bg-white px-3 py-2.5 text-[13px] text-ink placeholder-ink-tertiary focus:border-[#00684a] focus:ring-[#00684a] focus:outline-none transition-all"
+                  />
+                  <p className="text-[11px] text-ink-tertiary leading-normal">
+                    Create a PAT with read organization billing scopes on{" "}
+                    <a
+                      href="https://github.com/settings/tokens"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#00684a] hover:text-[#00ed64] hover:underline inline-flex items-center gap-0.5"
+                    >
+                      github.com/settings/tokens
+                      <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                    </a>
+                    . Ensure organization permission is selected.
+                  </p>
+                </div>
+
+                {/* Error Display */}
+                {modalError && (
+                  <div className="rounded-md bg-red-50 border border-red-200 p-2.5 text-xs text-red-600 font-medium leading-relaxed">
+                    ⚠️ {modalError}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    disabled={isSubmitting}
+                    className="flex-1 rounded-full border border-hairline-strong bg-white h-10 px-4 flex items-center justify-center text-[13px] font-semibold text-ink hover:bg-slate-100 transition-colors disabled:opacity-40"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 rounded-full bg-[#00ed64] hover:bg-[#00b545] h-10 px-4 flex items-center justify-center text-[13px] font-semibold text-[#001e2b] shadow-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-60 cursor-pointer border border-transparent"
+                  >
+                    {isSubmitting ? "Connecting..." : "Verify & Activate"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        ),
         document.body
       )}
 
@@ -586,16 +761,16 @@ export function IntegrationCard({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
             onClick={() => setIsTelemetryOpen(false)}
           />
           
           {/* Dialog Container */}
-          <div className="relative z-10 w-full max-w-lg max-h-[90vh] flex flex-col transform overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative z-10 w-full max-w-lg max-h-[90vh] flex flex-col transform overflow-hidden rounded-2xl border border-hairline bg-surface-1 p-6 shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200 text-ink">
             {/* Close button */}
             <button
               onClick={() => setIsTelemetryOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
+              className="absolute right-4 top-4 rounded-lg p-1.5 text-ink-subtle hover:bg-surface-2 hover:text-ink transition-colors cursor-pointer"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -609,10 +784,10 @@ export function IntegrationCard({
                 {meta.icon}
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">
+                <h3 className="text-lg font-bold text-ink">
                   {providerKey === "GITHUB_COPILOT" ? "Copilot Seat & Token Telemetry" : "Copilot Telemetry Analytics"}
                 </h3>
-                <p className="text-xs text-slate-450 font-medium">
+                <p className="text-xs text-ink-subtle font-medium">
                   {providerKey === "GITHUB_COPILOT" ? "Real-time individual assignment tracking" : "Fine-grained token activity & workloads"}
                 </p>
               </div>
@@ -622,37 +797,37 @@ export function IntegrationCard({
             <div className="flex-1 overflow-y-auto pr-1.5 space-y-4 min-h-0 scrollbar-thin">
               {/* Highlights Grid */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                  <span className="text-[9px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">AI Workload</span>
-                  <span className="text-base font-extrabold text-slate-800 tabular-nums">
-                    {providerKey === "GITHUB_COPILOT" ? "985k" : `${(totalTokens / 1000).toFixed(0)}k`} <span className="text-[10px] text-slate-500 font-normal">tkn</span>
+                <div className="bg-canvas border border-hairline rounded-xl p-3">
+                  <span className="text-[9px] font-bold text-ink-subtle block mb-0.5 uppercase tracking-wider">AI Workload</span>
+                  <span className="text-base font-extrabold text-ink tabular-nums">
+                    {providerKey === "GITHUB_COPILOT" ? "985k" : `${(totalTokens / 1000).toFixed(0)}k`} <span className="text-[10px] text-ink-tertiary font-normal">tkn</span>
                   </span>
                 </div>
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                  <span className="text-[9px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">LLM Engines</span>
-                  <span className="text-base font-extrabold text-slate-800">
-                    {providerKey === "GITHUB_COPILOT" ? "2" : uniqueModels} <span className="text-[10px] text-slate-500 font-normal">active</span>
+                <div className="bg-canvas border border-hairline rounded-xl p-3">
+                  <span className="text-[9px] font-bold text-ink-subtle block mb-0.5 uppercase tracking-wider">LLM Engines</span>
+                  <span className="text-base font-extrabold text-ink">
+                    {providerKey === "GITHUB_COPILOT" ? "2" : uniqueModels} <span className="text-[10px] text-ink-tertiary font-normal">active</span>
                   </span>
                 </div>
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                  <span className="text-[9px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">SaaS Leak</span>
-                  <span className="text-base font-extrabold text-rose-600 tabular-nums">
-                    {providerKey === "GITHUB_COPILOT" ? "$19.00" : `$${totalLeak.toFixed(2)}`}<span className="text-[10px] text-rose-500 font-normal">/mo</span>
+                <div className="bg-canvas border border-hairline rounded-xl p-3">
+                  <span className="text-[9px] font-bold text-ink-subtle block mb-0.5 uppercase tracking-wider">SaaS Leak</span>
+                  <span className="text-base font-extrabold text-destructive tabular-nums">
+                    {providerKey === "GITHUB_COPILOT" ? "$19.00" : `$${totalLeak.toFixed(2)}`}<span className="text-[10px] text-destructive/80 font-normal">/mo</span>
                   </span>
                 </div>
               </div>
 
               {/* Pooled AI Capacity Status Banner */}
               {providerKey === "GITHUB_COPILOT" && (
-                <div className="flex items-center justify-between rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-[11px] font-semibold text-slate-200 shadow-md">
+                <div className="flex items-center justify-between rounded-xl bg-canvas border border-hairline px-4 py-3 text-[11px] font-semibold text-ink shadow-md">
                   <div className="flex items-center gap-2">
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-400"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-450"></span>
                     </span>
                     <span>Pooled AI Credit Capacity:</span>
                   </div>
-                  <span className="text-indigo-400 font-bold tabular-nums whitespace-nowrap">
+                  <span className="text-primary font-bold tabular-nums whitespace-nowrap">
                     ${((integration?.wastedSeats ?? 0) * 19).toFixed(2)} Stranded
                   </span>
                 </div>
@@ -660,9 +835,9 @@ export function IntegrationCard({
 
               {/* Copilot Optimization Policy */}
               {providerKey === "GITHUB_COPILOT" && (
-                <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-3.5 text-xs text-slate-650 shadow-sm">
-                  <h4 className="font-bold text-slate-800 mb-2.5 flex items-center gap-1.5">
-                    <svg className="h-3.5 w-3.5 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <div className="rounded-xl border border-hairline bg-canvas/40 p-3.5 text-xs text-ink-muted shadow-sm">
+                  <h4 className="font-bold text-ink mb-2.5 flex items-center gap-1.5">
+                    <svg className="h-3.5 w-3.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <circle cx="12" cy="12" r="10" />
                       <line x1="12" y1="16" x2="12" y2="12" />
                       <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -671,20 +846,20 @@ export function IntegrationCard({
                   </h4>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-[11px] leading-relaxed">
                     <div>
-                      <span className="text-slate-400 block font-medium">Idle Threshold</span>
-                      <span className="font-semibold text-slate-700">30 Days (No activity)</span>
+                      <span className="text-ink-subtle block font-medium">Idle Threshold</span>
+                      <span className="font-semibold text-ink-muted">30 Days (No activity)</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block font-medium">Telemetry Resolution</span>
-                      <span className="font-semibold text-slate-700">Hourly API Sync</span>
+                      <span className="text-ink-subtle block font-medium">Telemetry Resolution</span>
+                      <span className="font-semibold text-ink-muted">Hourly API Sync</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block font-medium">Public Code Filter</span>
-                      <span className="font-semibold text-amber-600">Blocked (Enforced)</span>
+                      <span className="text-ink-subtle block font-medium">Public Code Filter</span>
+                      <span className="font-semibold text-amber-500">Blocked (Enforced)</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block font-medium">Allowed LLMs</span>
-                      <span className="font-semibold text-slate-700">GPT-4o, Claude 3.5, Gemini 1.5</span>
+                      <span className="text-ink-subtle block font-medium">Allowed LLMs</span>
+                      <span className="font-semibold text-ink-muted">GPT-4o, Claude 3.5, Llama 3.1</span>
                     </div>
                   </div>
                 </div>
@@ -906,11 +1081,11 @@ export function IntegrationCard({
             </div>
 
             {/* Bottom bar */}
-            <div className="flex justify-end pt-4 mt-4 border-t border-slate-100 flex-shrink-0">
+            <div className="flex justify-end pt-4 mt-4 border-t border-hairline flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setIsTelemetryOpen(false)}
-                className="rounded-lg bg-slate-900 hover:bg-slate-800 px-4 py-2 text-[12px] font-bold text-white shadow-sm transition-all cursor-pointer"
+                className="rounded-lg bg-primary hover:bg-primary-hover px-4 py-2 text-[12px] font-bold text-white shadow-sm transition-all cursor-pointer border border-transparent"
               >
                 Close Analytics
               </button>

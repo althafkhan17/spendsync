@@ -30,11 +30,11 @@ export default async function DashboardPage() {
         {/* Header */}
         <div id="dashboard-header" className="mb-8 flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
               Welcome back,{" "}
-              <span className="text-slate-900">{firstName}</span>
+              <span className="text-ink">{firstName}</span>
             </h1>
-            <p className="mt-1.5 text-[15px] text-slate-500">
+            <p className="mt-1.5 text-[15px] text-ink-subtle">
               Here&apos;s an overview of your SaaS spend this month.
             </p>
           </div>

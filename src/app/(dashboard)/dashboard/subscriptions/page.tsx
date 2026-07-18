@@ -19,10 +19,10 @@ export default async function SubscriptionsPage() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
               Subscriptions
             </h1>
-            <p className="mt-1.5 text-[15px] text-slate-500">
+            <p className="mt-1.5 text-[15px] text-ink-subtle">
               Manage and track all your SaaS subscriptions in one place.
             </p>
           </div>
@@ -30,21 +30,21 @@ export default async function SubscriptionsPage() {
         </div>
 
         {/* Mini stats row */}
-        <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
-          <div className="flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white px-3 py-1 shadow-sm">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+        <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-[#5c6c7a]">
+          <div className="flex items-center gap-1.5 rounded-full border border-hairline bg-white px-3 py-1 shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-[#00a35c]" />
             <span>Active:</span>
-            <span className="font-semibold text-slate-900">{activeCount}</span>
+            <span className="font-semibold text-ink">{activeCount}</span>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white px-3 py-1 shadow-sm">
+          <div className="flex items-center gap-1.5 rounded-full border border-hairline bg-white px-3 py-1 shadow-sm">
             <span className="h-2 w-2 rounded-full bg-slate-400" />
             <span>Cancelled:</span>
-            <span className="font-semibold text-slate-900">{cancelledCount}</span>
+            <span className="font-semibold text-ink">{cancelledCount}</span>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white px-3 py-1 shadow-sm">
+          <div className="flex items-center gap-1.5 rounded-full border border-hairline bg-white px-3 py-1 shadow-sm">
             <span className="h-2 w-2 rounded-full bg-amber-500" />
             <span>Needs Review:</span>
-            <span className="font-semibold text-slate-900">{needsReviewCount}</span>
+            <span className="font-semibold text-ink">{needsReviewCount}</span>
           </div>
         </div>
 

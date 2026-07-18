@@ -44,18 +44,18 @@ export function AddSubscriptionModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
-        className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2"
+        className="inline-flex items-center justify-center gap-2 rounded-full bg-[#00ed64] hover:bg-[#00b545] px-5 py-2 text-sm font-semibold text-[#001e2b] shadow-sm transition-colors cursor-pointer border border-transparent focus-visible:outline-none"
         id="add-subscription-btn"
       >
         <Plus className="h-4 w-4" />
         Add Subscription
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] bg-white border border-hairline text-ink rounded-lg shadow-xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-slate-900">
+          <DialogTitle className="text-lg font-semibold text-ink">
             Add Subscription
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-500">
+          <DialogDescription className="text-sm text-[#5c6c7a]">
             Track a new SaaS subscription. Fill in the details below.
           </DialogDescription>
         </DialogHeader>
@@ -63,7 +63,7 @@ export function AddSubscriptionModal() {
         <form ref={formRef} action={handleSubmit} className="space-y-5 pt-2">
           {/* Merchant Name */}
           <div className="space-y-2">
-            <Label htmlFor="merchantName" className="text-sm font-medium text-slate-700">
+            <Label htmlFor="merchantName" className="text-sm font-semibold text-ink">
               Merchant Name
             </Label>
             <Input
@@ -71,14 +71,14 @@ export function AddSubscriptionModal() {
               name="merchantName"
               placeholder="e.g. Figma, Vercel, Notion"
               required
-              className="h-10"
+              className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md"
             />
           </div>
 
           {/* Amount + Cycle Row */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="amount" className="text-sm font-medium text-slate-700">
+              <Label htmlFor="amount" className="text-sm font-semibold text-ink">
                 Amount ($)
               </Label>
               <Input
@@ -89,20 +89,20 @@ export function AddSubscriptionModal() {
                 min="0.01"
                 placeholder="29.99"
                 required
-                className="h-10 tabular-nums"
+                className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md tabular-nums"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="billingCycle" className="text-sm font-medium text-slate-700">
+              <Label htmlFor="billingCycle" className="text-sm font-semibold text-ink">
                 Billing Cycle
               </Label>
               <Select name="billingCycle" defaultValue="MONTHLY" required>
-                <SelectTrigger id="billingCycle" className="h-10">
+                <SelectTrigger id="billingCycle" className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md">
                   <SelectValue placeholder="Select cycle" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MONTHLY">Monthly</SelectItem>
-                  <SelectItem value="ANNUAL">Annual</SelectItem>
+                <SelectContent className="bg-white border border-hairline text-ink rounded-md">
+                  <SelectItem value="MONTHLY" className="focus:bg-[#f4f7f6] cursor-pointer">Monthly</SelectItem>
+                  <SelectItem value="ANNUAL" className="focus:bg-[#f4f7f6] cursor-pointer">Annual</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -110,7 +110,7 @@ export function AddSubscriptionModal() {
 
           {/* Next Renewal Date */}
           <div className="space-y-2">
-            <Label htmlFor="nextRenewalDate" className="text-sm font-medium text-slate-700">
+            <Label htmlFor="nextRenewalDate" className="text-sm font-semibold text-ink">
               Next Renewal Date
             </Label>
             <Input
@@ -118,7 +118,7 @@ export function AddSubscriptionModal() {
               name="nextRenewalDate"
               type="date"
               required
-              className="h-10"
+              className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md"
             />
           </div>
 
@@ -127,7 +127,7 @@ export function AddSubscriptionModal() {
 
           {/* Error message */}
           {error && (
-            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+            <p className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
               {error}
             </p>
           )}
@@ -138,18 +138,18 @@ export function AddSubscriptionModal() {
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="h-10"
+              className="h-10 rounded-full border border-hairline-strong hover:bg-slate-100 text-ink font-semibold px-5"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isPending}
-              className="h-10 gap-2 bg-slate-900 text-white hover:bg-slate-800"
+              className="h-10 rounded-full bg-[#00ed64] hover:bg-[#00b545] text-[#001e2b] font-semibold px-5 border border-transparent disabled:opacity-60"
             >
               {isPending ? (
                 <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#001e2b] border-t-transparent" />
                   Adding...
                 </>
               ) : (

@@ -17,19 +17,19 @@ export default async function InvoicesPage() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
             Invoices &amp; Email Log
           </h1>
-          <p className="mt-1.5 text-[15px] text-slate-500">
+          <p className="mt-1.5 text-[15px] text-ink-subtle">
             Audit trail of all processed inbound emails, receipts, and invoices.
           </p>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+          <div className="relative overflow-hidden rounded-lg border border-[#e1e5e8] bg-white p-5 shadow-sm transition-all hover:shadow-md">
             <div className="flex items-center gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-surface-3 border border-hairline text-[#00684a]">
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9" />
                   <polyline points="22 7 12 13 2 7" />
@@ -38,30 +38,30 @@ export default async function InvoicesPage() {
                 </svg>
               </div>
               <div>
-                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Inbound Volume</span>
-                <span className="text-2xl font-extrabold text-slate-900 tabular-nums">{totalCount}</span>
+                <span className="text-[11px] font-semibold text-ink-subtle uppercase tracking-wider block">Inbound Volume</span>
+                <span className="text-2xl font-extrabold text-ink tabular-nums">{totalCount}</span>
               </div>
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+          <div className="relative overflow-hidden rounded-lg border border-[#e1e5e8] bg-white p-5 shadow-sm transition-all hover:shadow-md">
             <div className="flex items-center gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-surface-3 border border-hairline text-semantic-success">
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="1" x2="12" y2="23" />
                   <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                 </svg>
               </div>
               <div>
-                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Receipts Extracted</span>
-                <span className="text-2xl font-extrabold text-slate-900 tabular-nums">{receiptsCount}</span>
+                <span className="text-[11px] font-semibold text-ink-subtle uppercase tracking-wider block">Receipts Extracted</span>
+                <span className="text-2xl font-extrabold text-ink tabular-nums">{receiptsCount}</span>
               </div>
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+          <div className="relative overflow-hidden rounded-lg border border-[#e1e5e8] bg-white p-5 shadow-sm transition-all hover:shadow-md">
             <div className="flex items-center gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-surface-3 border border-hairline text-[#00684a]">
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
@@ -71,8 +71,8 @@ export default async function InvoicesPage() {
                 </svg>
               </div>
               <div>
-                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">PDFs Parsed</span>
-                <span className="text-2xl font-extrabold text-slate-900 tabular-nums">{pdfCount}</span>
+                <span className="text-[11px] font-semibold text-ink-subtle uppercase tracking-wider block">PDFs Parsed</span>
+                <span className="text-2xl font-extrabold text-[#001e2b] tabular-nums">{pdfCount}</span>
               </div>
             </div>
           </div>

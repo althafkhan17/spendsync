@@ -25,45 +25,42 @@ export function MetricCard({
   return (
     <Card
       id={id}
-      className="group relative overflow-hidden border-0 bg-white shadow-sm ring-1 ring-slate-200/60 transition-all duration-200 hover:shadow-md hover:ring-slate-300/80"
+      className="group relative overflow-hidden border border-hairline bg-white shadow-sm transition-all duration-200 hover:shadow-md"
     >
       <CardContent className="p-5 sm:p-6">
         <div className="flex items-start justify-between">
           <div className="space-y-3">
-            <p className="text-[13px] font-medium tracking-wide text-slate-500 uppercase">
+            <p className="text-eyebrow text-ink-subtle">
               {title}
             </p>
             <div>
-              <p className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+              <p className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
                 {value}
               </p>
               {subtitle && (
-                <p className="mt-1 text-[13px] text-slate-400">{subtitle}</p>
+                <p className="mt-1 text-[13px] text-ink-tertiary">{subtitle}</p>
               )}
             </div>
             {trend && (
               <div className="flex items-center gap-1.5">
                 <span
                   className={cn(
-                    "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+                    "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border",
                     trend.positive
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "bg-red-50 text-red-700"
+                      ? "bg-[#e3fcef] text-semantic-success border-[#00ed64]/20"
+                      : "bg-red-50 text-red-600 border-red-200"
                   )}
                 >
                   {trend.positive ? "↑" : "↓"} {trend.value}
                 </span>
-                <span className="text-xs text-slate-400">vs last month</span>
+                <span className="text-xs text-ink-tertiary">vs last month</span>
               </div>
             )}
           </div>
           <div
-            className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br shadow-sm transition-transform duration-200 group-hover:scale-105",
-              accentColor
-            )}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-3 border border-hairline transition-transform duration-200 group-hover:scale-105"
           >
-            <Icon className="h-5 w-5 text-white" />
+            <Icon className="h-5 w-5 text-[#00684a]" />
           </div>
         </div>
       </CardContent>

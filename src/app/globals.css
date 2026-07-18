@@ -5,11 +5,33 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* System-wide mapping */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
+  
+  /* MongoDB Palette variables mapped to Tailwind utility colors */
+  --color-canvas: var(--canvas);
+  --color-canvas-dark: var(--canvas-dark);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+  
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-hairline-tertiary: var(--hairline-tertiary);
+  
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-focus: var(--primary-focus);
+  
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-ink-tertiary: var(--ink-tertiary);
+  
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -18,11 +40,7 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
+  
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -39,82 +57,107 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --color-semantic-success: var(--semantic-success);
+  
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-xxl: 24px;
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  /* MongoDB core colors */
+  --brand-green: #00ed64;
+  --brand-green-dark: #00684a;
+  --brand-green-mid: #00a35c;
+  --brand-green-soft: #c3f0d2;
+  --brand-teal-deep: #001e2b;
+  --brand-teal: #003d4f;
+  --brand-teal-mid: #00684a;
+
+  --accent-purple: #7b3ff2;
+  --accent-orange: #fa6e39;
+  --accent-pink: #f06bb8;
+  --accent-blue: #3d4f9f;
+
+  --canvas: #ffffff;
+  --canvas-dark: #001e2b;
+  
+  /* Surfaces */
+  --surface-1: #ffffff; /* Default cards are flat on canvas */
+  --surface-2: #f9fbfa; /* Subtle sections */
+  --surface-3: #f4f7f6; /* Soft green surfaces */
+  --surface-4: #e3fcef; /* Highlight surfaces */
+  
+  /* Hairline Borders */
+  --hairline: #e1e5e8;
+  --hairline-strong: #c1ccd6;
+  --hairline-tertiary: #eceff1;
+  
+  --primary-hover: #00b545;
+  --primary-focus: #008c34;
+  
+  /* Text / Inks */
+  --ink: #001e2b;
+  --ink-muted: #3d4f5b;      /* Slate text */
+  --ink-subtle: #5c6c7a;     /* Steel text */
+  --ink-tertiary: #7c8c9a;   /* Stone/muted text */
+
+  /* Semantic success color */
+  --semantic-success: #00a35c;
+
+  /* Standard shadcn mapping - light mode by default */
+  --background: var(--surface-3); /* soft green-grey workspace background */
+  --foreground: var(--ink);
+  
+  --card: var(--canvas);
+  --card-foreground: var(--ink);
+  
+  --popover: var(--canvas);
+  --popover-foreground: var(--ink);
+  
+  --primary: var(--brand-green);
+  --primary-foreground: #001e2b;
+  
+  --secondary: var(--canvas);
+  --secondary-foreground: var(--ink);
+  
+  --muted: var(--surface-2);
+  --muted-foreground: var(--ink-subtle);
+  
+  --accent: var(--surface-2);
+  --accent-foreground: var(--ink);
+  
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --destructive-foreground: #ffffff;
+  
+  --border: var(--hairline);
+  --input: var(--hairline-strong);
+  --ring: var(--brand-green-dark);
+  
+  --radius: 0.75rem; /* 12px default */
+  
+  /* Sidebar styles mapped to Dark Deep-Teal MongoDB theme */
+  --sidebar: var(--brand-teal-deep);
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: var(--brand-green);
+  --sidebar-primary-foreground: #001e2b;
+  --sidebar-accent: var(--brand-teal);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1c2d38; /* hairline-dark */
+  --sidebar-ring: var(--brand-green);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Maintain high contrast deep teal backgrounds when dark mode requested */
+  --background: var(--brand-teal-deep);
+  --foreground: #ffffff;
+  --card: var(--brand-teal-deep);
+  --card-foreground: #ffffff;
+  --border: #1c2d38;
 }
 
 @layer base {
@@ -122,9 +165,128 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-ink;
   }
   html {
-    @apply font-sans;
+    @apply font-sans h-full bg-background;
+    scroll-behavior: smooth;
   }
+}
+
+/* MongoDB Typography Utilities */
+@utility text-hero-display {
+  font-family: var(--font-sans);
+  font-size: 72px;
+  font-weight: 500;
+  line-height: 1.10;
+  letter-spacing: -1.5px;
+}
+@utility text-display-lg {
+  font-family: var(--font-sans);
+  font-size: 56px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -1px;
+}
+@utility text-heading-1 {
+  font-family: var(--font-sans);
+  font-size: 48px;
+  font-weight: 500;
+  line-height: 1.20;
+  letter-spacing: -0.5px;
+}
+@utility text-heading-2 {
+  font-family: var(--font-sans);
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+}
+@utility text-heading-3 {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.30;
+}
+@utility text-heading-4 {
+  font-family: var(--font-sans);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+@utility text-heading-5 {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.40;
+}
+@utility text-subtitle {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.50;
+}
+@utility text-body-lg {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+@utility text-body-custom {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+@utility text-body-md {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+@utility text-body-sm {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.50;
+}
+@utility text-body-sm-medium {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.50;
+}
+@utility text-caption-bold {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.40;
+}
+@utility text-micro-uppercase {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.40;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+@utility text-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.40;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+@utility text-button-md {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.30;
+}
+@utility text-code-md {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.55;
 }

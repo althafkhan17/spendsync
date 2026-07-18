@@ -46,7 +46,7 @@ export function WorkspaceNameEditor({ initialName }: WorkspaceNameEditorProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={isPending}
-            className="max-w-[280px] h-9 text-sm"
+            className="max-w-[280px] h-9 text-sm bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md"
             placeholder="Workspace Name"
             autoFocus
           />
@@ -54,11 +54,11 @@ export function WorkspaceNameEditor({ initialName }: WorkspaceNameEditorProps) {
             size="icon-sm"
             onClick={handleSave}
             disabled={isPending}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white"
+            className="bg-[#00ed64] hover:bg-[#00b545] text-[#001e2b] border border-transparent rounded-full cursor-pointer"
             title="Save"
           >
             {isPending ? (
-              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#001e2b] border-t-transparent" />
             ) : (
               <Check className="h-4 w-4" />
             )}
@@ -68,6 +68,7 @@ export function WorkspaceNameEditor({ initialName }: WorkspaceNameEditorProps) {
             size="icon-sm"
             onClick={handleCancel}
             disabled={isPending}
+            className="border-hairline-strong bg-white hover:bg-slate-100 rounded-full cursor-pointer"
             title="Cancel"
           >
             <X className="h-4 w-4" />
@@ -80,12 +81,12 @@ export function WorkspaceNameEditor({ initialName }: WorkspaceNameEditorProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-base font-semibold text-slate-900">{name}</span>
+      <span className="text-base font-semibold text-ink">{name}</span>
       <Button
         variant="ghost"
         size="icon-xs"
         onClick={() => setIsEditing(true)}
-        className="text-slate-400 hover:text-slate-600"
+        className="text-ink-subtle hover:text-ink hover:bg-slate-100 rounded-full cursor-pointer"
         title="Edit name"
       >
         <Edit2 className="h-3.5 w-3.5" />

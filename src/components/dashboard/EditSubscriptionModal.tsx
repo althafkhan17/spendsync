@@ -61,12 +61,12 @@ export function EditSubscriptionModal({
       <DialogTrigger className="inline-flex items-center justify-center">
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] bg-white border border-hairline text-ink rounded-lg shadow-xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-slate-900">
+          <DialogTitle className="text-lg font-semibold text-ink">
             Edit Subscription
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-500">
+          <DialogDescription className="text-sm text-[#5c6c7a]">
             Update the details for {subscription.merchantName}.
           </DialogDescription>
         </DialogHeader>
@@ -76,7 +76,7 @@ export function EditSubscriptionModal({
           <div className="space-y-2">
             <Label
               htmlFor="edit-merchantName"
-              className="text-sm font-medium text-slate-700"
+              className="text-sm font-semibold text-ink"
             >
               Merchant Name
             </Label>
@@ -86,7 +86,7 @@ export function EditSubscriptionModal({
               defaultValue={subscription.merchantName}
               placeholder="e.g. Figma, Vercel, Notion"
               required
-              className="h-10"
+              className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md"
             />
           </div>
 
@@ -95,7 +95,7 @@ export function EditSubscriptionModal({
             <div className="space-y-2">
               <Label
                 htmlFor="edit-amount"
-                className="text-sm font-medium text-slate-700"
+                className="text-sm font-semibold text-ink"
               >
                 Amount ($)
               </Label>
@@ -108,13 +108,13 @@ export function EditSubscriptionModal({
                 defaultValue={Number(subscription.amount).toString()}
                 placeholder="29.99"
                 required
-                className="h-10 tabular-nums"
+                className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md tabular-nums"
               />
             </div>
             <div className="space-y-2">
               <Label
                 htmlFor="edit-billingCycle"
-                className="text-sm font-medium text-slate-700"
+                className="text-sm font-semibold text-ink"
               >
                 Billing Cycle
               </Label>
@@ -123,12 +123,12 @@ export function EditSubscriptionModal({
                 defaultValue={subscription.billingCycle}
                 required
               >
-                <SelectTrigger id="edit-billingCycle" className="h-10">
+                <SelectTrigger id="edit-billingCycle" className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md">
                   <SelectValue placeholder="Select cycle" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MONTHLY">Monthly</SelectItem>
-                  <SelectItem value="ANNUAL">Annual</SelectItem>
+                <SelectContent className="bg-white border border-hairline text-ink rounded-md">
+                  <SelectItem value="MONTHLY" className="focus:bg-[#f4f7f6] cursor-pointer">Monthly</SelectItem>
+                  <SelectItem value="ANNUAL" className="focus:bg-[#f4f7f6] cursor-pointer">Annual</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -138,7 +138,7 @@ export function EditSubscriptionModal({
           <div className="space-y-2">
             <Label
               htmlFor="edit-nextRenewalDate"
-              className="text-sm font-medium text-slate-700"
+              className="text-sm font-semibold text-ink"
             >
               Next Renewal Date
             </Label>
@@ -148,7 +148,7 @@ export function EditSubscriptionModal({
               type="date"
               defaultValue={formatDateForInput(subscription.nextRenewalDate)}
               required
-              className="h-10"
+              className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md"
             />
           </div>
 
@@ -156,7 +156,7 @@ export function EditSubscriptionModal({
           <div className="space-y-2">
             <Label
               htmlFor="edit-status"
-              className="text-sm font-medium text-slate-700"
+              className="text-sm font-semibold text-ink"
             >
               Status
             </Label>
@@ -165,20 +165,20 @@ export function EditSubscriptionModal({
               defaultValue={subscription.status}
               required
             >
-              <SelectTrigger id="edit-status" className="h-10">
+              <SelectTrigger id="edit-status" className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                <SelectItem value="NEEDS_REVIEW">Needs Review</SelectItem>
+              <SelectContent className="bg-white border border-hairline text-ink rounded-md">
+                <SelectItem value="ACTIVE" className="focus:bg-[#f4f7f6] cursor-pointer">Active</SelectItem>
+                <SelectItem value="CANCELLED" className="focus:bg-[#f4f7f6] cursor-pointer">Cancelled</SelectItem>
+                <SelectItem value="NEEDS_REVIEW" className="focus:bg-[#f4f7f6] cursor-pointer">Needs Review</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Error message */}
           {error && (
-            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+            <p className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
               {error}
             </p>
           )}
@@ -189,18 +189,18 @@ export function EditSubscriptionModal({
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="h-10"
+              className="h-10 rounded-full border border-hairline-strong hover:bg-slate-100 text-ink font-semibold px-5"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isPending}
-              className="h-10 gap-2 bg-slate-900 text-white hover:bg-slate-800"
+              className="h-10 rounded-full bg-[#00ed64] hover:bg-[#00b545] text-[#001e2b] font-semibold px-5 border border-transparent disabled:opacity-60"
             >
               {isPending ? (
                 <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#001e2b] border-t-transparent" />
                   Saving...
                 </>
               ) : (

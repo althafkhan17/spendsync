@@ -19,18 +19,18 @@ type StatusKey = "ACTIVE" | "CANCELLED" | "NEEDS_REVIEW";
 function getStatusStyles(status: StatusKey) {
   switch (status) {
     case "ACTIVE":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200/60";
+      return "bg-[#c3f0d2] text-[#00684a] border-[#00ed64]/20";
     case "CANCELLED":
-      return "bg-slate-100 text-slate-500 border-slate-200/60";
+      return "bg-slate-100 text-slate-500 border-slate-200";
     case "NEEDS_REVIEW":
-      return "bg-amber-50 text-amber-700 border-amber-200/60";
+      return "bg-amber-50 text-amber-600 border-amber-200";
   }
 }
 
 function getStatusDot(status: StatusKey) {
   switch (status) {
     case "ACTIVE":
-      return "bg-emerald-500";
+      return "bg-[#00a35c]";
     case "CANCELLED":
       return "bg-slate-400";
     case "NEEDS_REVIEW":
@@ -66,10 +66,19 @@ function formatDate(date: Date) {
   });
 }
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
+function formatCurrency(amount: number, currencyCode: string) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currencyCode || "USD",
+    }).format(amount);
+  } catch (error) {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
+  }
+}
 
 interface SubscriptionTableProps {
   subscriptions: SubscriptionRow[];
@@ -81,16 +90,16 @@ export function SubscriptionTable({ subscriptions, showActions = false }: Subscr
     return (
       <Card
         id="subscriptions-table"
-        className="border-0 bg-white shadow-sm ring-1 ring-slate-200/60"
+        className="border border-hairline bg-white shadow-sm rounded-lg"
       >
         <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 mb-4">
-            <Inbox className="h-6 w-6 text-slate-400" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-3 border border-hairline mb-4">
+            <Inbox className="h-6 w-6 text-ink-subtle" />
           </div>
-          <p className="text-sm font-medium text-slate-900">
+          <p className="text-sm font-medium text-ink">
             No subscriptions yet
           </p>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-ink-tertiary">
             Click &quot;Add Subscription&quot; above to start tracking your SaaS
             spend.
           </p>
@@ -102,14 +111,14 @@ export function SubscriptionTable({ subscriptions, showActions = false }: Subscr
   return (
     <Card
       id="subscriptions-table"
-      className="border-0 bg-white shadow-sm ring-1 ring-slate-200/60"
+      className="border border-hairline bg-white shadow-sm rounded-lg"
     >
-      <CardHeader className="border-b border-slate-100 px-6 py-4">
+      <CardHeader className="border-b border-hairline px-6 py-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold text-slate-900">
+          <CardTitle className="text-base font-semibold text-ink">
             Recent Activity &amp; Subscriptions
           </CardTitle>
-          <span className="text-xs font-medium text-slate-400">
+          <span className="text-xs font-medium text-ink-subtle">
             {subscriptions.length} service{subscriptions.length !== 1 ? "s" : ""}
           </span>
         </div>
@@ -117,24 +126,24 @@ export function SubscriptionTable({ subscriptions, showActions = false }: Subscr
       <CardContent className="p-0">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-slate-100 hover:bg-transparent">
-              <TableHead className="h-11 pl-6 text-xs font-medium tracking-wide text-slate-400 uppercase">
+            <TableRow className="border-b border-hairline hover:bg-transparent">
+              <TableHead className="h-11 pl-6 text-xs font-medium tracking-wide text-ink-subtle uppercase">
                 Merchant
               </TableHead>
-              <TableHead className="h-11 text-xs font-medium tracking-wide text-slate-400 uppercase">
+              <TableHead className="h-11 text-xs font-medium tracking-wide text-ink-subtle uppercase">
                 Amount
               </TableHead>
-              <TableHead className="h-11 text-xs font-medium tracking-wide text-slate-400 uppercase">
+              <TableHead className="h-11 text-xs font-medium tracking-wide text-ink-subtle uppercase">
                 Cycle
               </TableHead>
-              <TableHead className="h-11 text-xs font-medium tracking-wide text-slate-400 uppercase">
+              <TableHead className="h-11 text-xs font-medium tracking-wide text-ink-subtle uppercase">
                 Status
               </TableHead>
-              <TableHead className={cn("h-11 text-xs font-medium tracking-wide text-slate-400 uppercase", showActions ? "" : "pr-6 text-right")}>
+              <TableHead className={cn("h-11 text-xs font-medium tracking-wide text-ink-subtle uppercase", showActions ? "" : "pr-6 text-right")}>
                 Next Renewal
               </TableHead>
               {showActions && (
-                <TableHead className="h-11 pr-6 text-right text-xs font-medium tracking-wide text-slate-400 uppercase">
+                <TableHead className="h-11 pr-6 text-right text-xs font-medium tracking-wide text-ink-subtle uppercase">
                   Actions
                 </TableHead>
               )}
@@ -146,27 +155,27 @@ export function SubscriptionTable({ subscriptions, showActions = false }: Subscr
                 key={sub.id}
                 id={`row-${sub.id}`}
                 className={cn(
-                  "group border-b border-slate-50 transition-colors hover:bg-slate-50/50",
+                  "group border-b border-hairline/60 transition-colors hover:bg-slate-50/60",
                   index === subscriptions.length - 1 && "border-b-0"
                 )}
               >
                 <TableCell className="py-4 pl-6">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm font-medium text-slate-600 transition-colors group-hover:bg-slate-200">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-3 border border-hairline text-sm font-medium text-ink transition-colors group-hover:bg-slate-100">
                       {getMerchantInitial(sub.merchantName)}
                     </div>
-                    <span className="text-sm font-medium text-slate-900">
+                    <span className="text-sm font-medium text-ink">
                       {sub.merchantName}
                     </span>
                   </div>
                 </TableCell>
                 <TableCell className="py-4">
-                  <span className="text-sm font-semibold tabular-nums text-slate-900">
-                    {currencyFormatter.format(Number(sub.amount))}
+                  <span className="text-sm font-semibold tabular-nums text-ink">
+                    {formatCurrency(Number(sub.amount), sub.currency)}
                   </span>
                 </TableCell>
                 <TableCell className="py-4">
-                  <span className="text-sm text-slate-500">
+                  <span className="text-sm text-ink-muted">
                     {getCycleLabel(sub.billingCycle)}
                   </span>
                 </TableCell>
@@ -174,7 +183,7 @@ export function SubscriptionTable({ subscriptions, showActions = false }: Subscr
                   <Badge
                     variant="outline"
                     className={cn(
-                      "gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                      "gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border",
                       getStatusStyles(sub.status)
                     )}
                   >
@@ -188,7 +197,7 @@ export function SubscriptionTable({ subscriptions, showActions = false }: Subscr
                   </Badge>
                 </TableCell>
                 <TableCell className={cn("py-4", showActions ? "" : "pr-6 text-right")}>
-                  <span className="text-sm tabular-nums text-slate-500">
+                  <span className="text-sm tabular-nums text-ink-muted">
                     {sub.status === "CANCELLED"
                       ? "—"
                       : formatDate(sub.nextRenewalDate)}

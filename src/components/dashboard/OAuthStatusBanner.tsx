@@ -62,14 +62,14 @@ export function OAuthStatusBanner() {
       className={cn(
         "flex items-start gap-3 rounded-xl border px-4 py-3 shadow-sm animate-in slide-in-from-top-2 duration-300",
         isSuccess
-          ? "border-emerald-200 bg-emerald-50/80 text-emerald-800"
-          : "border-red-200 bg-red-50/80 text-red-800"
+          ? "border-emerald-500/20 bg-emerald-950/20 text-semantic-success"
+          : "border-destructive/20 bg-red-950/20 text-destructive"
       )}
     >
       {isSuccess ? (
-        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
+        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-semantic-success" />
       ) : (
-        <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+        <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
       )}
       <p className="flex-1 text-[13px] font-medium leading-relaxed">
         {status.message}
@@ -77,10 +77,10 @@ export function OAuthStatusBanner() {
       <button
         onClick={() => setVisible(false)}
         className={cn(
-          "shrink-0 rounded-md p-1 transition-colors",
+          "shrink-0 rounded-md p-1 transition-colors cursor-pointer",
           isSuccess
-            ? "hover:bg-emerald-200/50 text-emerald-600"
-            : "hover:bg-red-200/50 text-red-600"
+            ? "hover:bg-emerald-950/40 text-semantic-success"
+            : "hover:bg-red-950/40 text-destructive"
         )}
       >
         <X className="h-4 w-4" />

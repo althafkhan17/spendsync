@@ -14,7 +14,7 @@ interface CloudMailinHeaders {
   from: string;
   to: string;
   subject: string;
-  [key: string]: string; // Additional headers we don't need yet
+  [key: string]: string;
 }
 
 interface CloudMailinEnvelope {
@@ -35,35 +35,134 @@ interface CloudMailinAttachment {
 interface CloudMailinPayload {
   headers: CloudMailinHeaders;
   envelope: CloudMailinEnvelope;
-  plain: string;    // Raw text body of the email
-  html?: string;    // HTML body (optional)
+  plain: string;
+  html?: string;
   reply_plain?: string;
   attachments?: CloudMailinAttachment[];
 }
 
 // ─────────────────────────────────────────────────────────
-// Zod Schema for Structured LLM Output (Step 7)
+// Constants
+// ─────────────────────────────────────────────────────────
+
+const ISO_CURRENCY_REGEX = /^[A-Z]{3}$/;
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+// A short symbol -> ISO map for the common cases Gemini might still slip on.
+const CURRENCY_SYMBOL_MAP: Record<string, string> = {
+  "$": "USD",
+  "₹": "INR",
+  "€": "EUR",
+  "£": "GBP",
+  "¥": "JPY",
+};
+
+// ─────────────────────────────────────────────────────────
+// Zod Schema for Structured LLM Output
+//
+// Note: the schema description text below is reused (in slightly
+// different shapes) for both the Gemini Vision JSON schema AND the
+// LangChain text-path schema, so keep them in sync — see
+// `buildExtractionPrompt()` which is now the single source of truth
+// for the *instructional* prompt text.
 // ─────────────────────────────────────────────────────────
 
 const extractionSchema = z.object({
-  vendorName: z.string().describe("The name of the vendor/merchant in uppercase, e.g., FIGMA"),
-  primaryBilledSeats: z.number().int().describe("Locate the explicit line item for 'Figma Design (seats)' or 'Professional plan'. Extract ONLY the value from the Quantity column for this row. Ignore Dev Mode quantities, subtotals, taxes, or total dollar balances. For non-seat-based invoices (e.g. AWS) or if seat details are missing, default to 1."),
-  seatUnitPrice: z.number().describe("The unit price per seat, e.g. 15.00. For non-seat-based invoices (e.g. AWS) or if seat details are missing, default to the total invoice amount."),
-  currency: z.string().describe("The currency of the transaction, e.g. USD or INR"),
-  invoiceDate: z.string().nullable().optional().describe("The date of the invoice/receipt in YYYY-MM-DD format, or null if not found."),
-  renewalDate: z.string().nullable().optional().describe("The date the subscription will renew or expire in YYYY-MM-DD format, or null if not found."),
+  vendorName: z
+    .string()
+    .min(1)
+    .describe("The name of the vendor/merchant in uppercase, e.g., FIGMA, AWS, GITHUB"),
+  primaryBilledSeats: z
+    .number()
+    .int()
+    .positive()
+    .describe(
+      "The quantity/seat count for the PRIMARY recurring billed line item on this invoice " +
+      "(e.g. a plan, license, or seat-based row). Default to 1 if the invoice is not seat-based " +
+      "or seat count cannot be determined."
+    ),
+  seatUnitPrice: z
+    .number()
+    .nonnegative()
+    .describe(
+      "The unit price per seat/license for the primary line item. If the invoice is not " +
+      "seat-based, set this to the total invoice amount and primaryBilledSeats to 1."
+    ),
+  currency: z
+    .string()
+    .describe("The ISO 4217 three-letter currency code, e.g. USD, INR, EUR. Convert symbols to codes."),
+  invoiceDate: z
+    .string()
+    .nullable()
+    .optional()
+    .describe("The date of the invoice/receipt in strict YYYY-MM-DD format, or null if not found."),
+  renewalDate: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      "The date the subscription will next renew or expire, in strict YYYY-MM-DD format, or null if not found."
+    ),
+  confidence: z
+    .number()
+    .min(0)
+    .max(1)
+    .describe(
+      "Your own confidence (0 to 1) that vendorName, primaryBilledSeats, and seatUnitPrice were " +
+      "extracted correctly from an explicit, unambiguous line item. Use a LOW score (< 0.5) if you " +
+      "had to guess, infer, or default any of these fields."
+    ),
+  extractionNotes: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      "One short sentence noting any ambiguity, guess, or fallback used (e.g. 'No seat count found, defaulted to 1'). Null if extraction was unambiguous."
+    ),
 });
 
 type ExtractionResult = z.infer<typeof extractionSchema>;
 
 // ─────────────────────────────────────────────────────────
+// Single source of truth for the extraction instructions.
+// Used by BOTH the PDF vision path and the text fallback path,
+// so the two extraction behaviors can't silently drift apart.
+// ─────────────────────────────────────────────────────────
+
+function buildExtractionInstructions(): string {
+  return `You are a highly accurate financial document extraction AI. You will be shown an invoice, receipt, or billing email from ANY SaaS vendor (Figma, AWS, GitHub Copilot, Slack, Zoom, Notion, etc.) — do not assume a specific vendor's invoice layout.
+
+Follow these steps in order:
+
+1. Identify the vendor/merchant name. Normalize it to uppercase (e.g. "Figma, Inc." -> "FIGMA").
+
+2. Find the line items table or itemized charges section. Identify the PRIMARY recurring line item — this is the main plan, license, or seat-based subscription charge (e.g. "Professional plan (seats)", "Copilot Business seats", "Pro Plan"). Ignore:
+   - One-time setup fees, taxes, discounts, credits, and prorations
+   - Subtotal / total / balance-due rows
+   - Secondary add-on line items (e.g. "Dev Mode seats" when a primary "Design seats" row also exists)
+   If multiple candidate primary rows exist, prefer the one with the largest line-item subtotal.
+
+3. From that single primary row, extract:
+   - primaryBilledSeats: the Quantity value for that row only.
+   - seatUnitPrice: the per-unit/per-seat price for that row only.
+   If the invoice has no seat/quantity concept at all (e.g. a flat AWS usage bill), set primaryBilledSeats to 1 and seatUnitPrice to the total amount due.
+
+4. Extract the currency as an ISO 4217 three-letter code (USD, INR, EUR, GBP, etc). Convert symbols ($ , ₹, €, £) to their code.
+
+5. Extract invoiceDate (the date the invoice/receipt was issued) in strict YYYY-MM-DD format.
+
+6. Extract renewalDate: the date the subscription will next renew, auto-renew, or expire. Look for phrasing like "active until June 17, 2026", "renews on", "your subscription will renew on", or a billing-period end date. Format as strict YYYY-MM-DD. If genuinely absent, return null — do not guess.
+
+7. Self-report a confidence score from 0 to 1 for how certain you are that vendorName, primaryBilledSeats, and seatUnitPrice came from an explicit, unambiguous source (not inferred or defaulted). If you had to default seats to 1, or guess between two candidate rows, your confidence should be below 0.5.
+
+8. If you used any fallback/default/guess anywhere, write one short sentence in extractionNotes explaining what you defaulted and why. Otherwise return null for extractionNotes.
+
+Respond with ONLY the structured data — no commentary.`;
+}
+
+// ─────────────────────────────────────────────────────────
 // Utility: Extract workspace ID from the "To" address
-//
-// CloudMailin addresses follow the pattern:
-//   hash+workspaceId@cloudmailin.net
-//
-// e.g. ac863b2208948441ba11+workspace123@cloudmailin.net
-//      → extracts "workspace123"
+// hash+workspaceId@cloudmailin.net
 // ─────────────────────────────────────────────────────────
 
 function extractWorkspaceId(toAddress: string): string | null {
@@ -72,16 +171,55 @@ function extractWorkspaceId(toAddress: string): string | null {
 }
 
 // ─────────────────────────────────────────────────────────
+// Utility: Normalize/validate currency codes coming back from the model.
+// Falls back to symbol-mapping, then to "USD" only as an absolute last resort
+// (and lowers confidence when that happens, handled by the caller).
+// ─────────────────────────────────────────────────────────
+
+function normalizeCurrency(raw: string): { currency: string; wasGuessed: boolean } {
+  const trimmed = raw.trim();
+  const upper = trimmed.toUpperCase();
+
+  if (ISO_CURRENCY_REGEX.test(upper)) {
+    return { currency: upper, wasGuessed: false };
+  }
+
+  if (CURRENCY_SYMBOL_MAP[trimmed]) {
+    return { currency: CURRENCY_SYMBOL_MAP[trimmed], wasGuessed: false };
+  }
+
+  // Try to find a known symbol anywhere in the string, e.g. "US$" or "Rs. 500"
+  for (const [symbol, code] of Object.entries(CURRENCY_SYMBOL_MAP)) {
+    if (trimmed.includes(symbol)) {
+      return { currency: code, wasGuessed: false };
+    }
+  }
+
+  console.warn(`⚠️  Unrecognized currency "${raw}", defaulting to USD`);
+  return { currency: "USD", wasGuessed: true };
+}
+
+// ─────────────────────────────────────────────────────────
+// Utility: Strictly parse a YYYY-MM-DD date string.
+// Rejects anything that doesn't match the expected format instead of
+// silently handing ambiguous strings to `new Date(...)`.
+// ─────────────────────────────────────────────────────────
+
+function parseStrictDate(value: string | null | undefined): Date | null {
+  if (!value || !DATE_REGEX.test(value.trim())) {
+    return null;
+  }
+  const parsed = new Date(`${value.trim()}T00:00:00Z`);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+// ─────────────────────────────────────────────────────────
 // POST /api/webhooks/inbound
-//
-// Receives inbound emails from CloudMailin, extracts workspace,
-// runs Gemini extraction (PDF attachment vision or text fallback),
-// upserts into database using Prisma, and records in EmailLog.
 // ─────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Webhook Secret Security Gate (Step 11)
+    // 1. Webhook Secret Security Gate
     const { searchParams } = request.nextUrl;
     const secret = searchParams.get("secret");
 
@@ -92,21 +230,17 @@ export async function POST(request: NextRequest) {
 
     const payload: CloudMailinPayload = await request.json();
 
-    // Extract fields from CloudMailin's normalized JSON
     const from = payload.headers?.from ?? "";
     const to = payload.headers?.to ?? payload.envelope?.to ?? "";
     const subject = payload.headers?.subject ?? "(no subject)";
     const textBody = payload.plain ?? "";
 
-    // Extract workspace ID from the "To" address
     const workspaceId = extractWorkspaceId(to);
 
-    // Filter for PDF attachments
     const pdfAttachment = payload.attachments?.find(
       (att) => att.content_type === "application/pdf"
     );
 
-    // Validate: we need either text body or a PDF attachment for AI extraction
     if (!textBody.trim() && !pdfAttachment) {
       console.warn("⚠️  Webhook received email with empty body and no PDF attachment");
       return NextResponse.json(
@@ -115,7 +249,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Log the extracted raw data for inspection
     console.log("═══════════════════════════════════════════");
     console.log("📩 INBOUND EMAIL RECEIVED");
     console.log("═══════════════════════════════════════════");
@@ -125,10 +258,11 @@ export async function POST(request: NextRequest) {
     console.log(`  Workspace ID: ${workspaceId ?? "⚠️  not found in To address"}`);
     console.log(`  Has PDF:      ${pdfAttachment ? "Yes (" + pdfAttachment.file_name + ")" : "No"}`);
     console.log("───────────────────────────────────────────");
-    console.log(`  Body Preview: ${textBody.substring(0, 200).replace(/\n/g, " ")}${textBody.length > 200 ? "…" : ""}`);
+    console.log(
+      `  Body Preview: ${textBody.substring(0, 200).replace(/\n/g, " ")}${textBody.length > 200 ? "…" : ""}`
+    );
     console.log("═══════════════════════════════════════════");
 
-    // Workspace Validation (Step 8)
     if (!workspaceId) {
       console.error("❌ Invalid workspace routing ID: null/empty in address");
       return NextResponse.json(
@@ -149,11 +283,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Authenticate Gemini API Key
     if (!process.env.GEMINI_API_KEY) {
       console.error("❌ GEMINI_API_KEY is not defined in the environment");
       return NextResponse.json(
-        { error: "Gemini API key is not configured" },
+        { error: "AI parsing service API key is not configured" },
         { status: 500 }
       );
     }
@@ -161,6 +294,8 @@ export async function POST(request: NextRequest) {
     let extractedData: ExtractionResult | null = null;
     let source = "TEXT";
     let attachmentName: string | null = null;
+
+    const instructions = buildExtractionInstructions();
 
     // 1. Try PDF Attachment extraction first (Gemini Native PDF Vision)
     if (pdfAttachment) {
@@ -174,25 +309,56 @@ export async function POST(request: NextRequest) {
           model: "gemini-2.5-flash",
           generationConfig: {
             responseMimeType: "application/json",
+            // Low temperature isn't exposed on this SDK's generationConfig type
+            // for structured JSON the same way as chat, but Vision JSON mode is
+            // already low-variance; keeping this explicit for future SDK bumps.
             responseSchema: {
               type: SchemaType.OBJECT,
               properties: {
-                vendorName: { type: SchemaType.STRING, description: "The name of the vendor/merchant in uppercase, e.g., FIGMA" },
-                primaryBilledSeats: { type: SchemaType.INTEGER, description: "Locate the explicit line item for 'Figma Design (seats)' or 'Professional plan'. Extract ONLY the value from the Quantity column for this row. Ignore Dev Mode quantities, subtotals, taxes, or total dollar balances. For non-seat-based invoices (e.g. AWS) or if seat details are missing, default to 1." },
-                seatUnitPrice: { type: SchemaType.NUMBER, description: "The unit price per seat, e.g. 15.00. For non-seat-based invoices (e.g. AWS) or if seat details are missing, default to the total invoice amount." },
-                currency: { type: SchemaType.STRING, description: "The currency of the transaction, e.g. USD or INR" },
-                invoiceDate: { type: SchemaType.STRING, description: "The date of the invoice/receipt in YYYY-MM-DD format, or null if not found." },
-                renewalDate: { type: SchemaType.STRING, description: "The date the subscription will renew or expire in YYYY-MM-DD format, or null if not found." }
+                vendorName: {
+                  type: SchemaType.STRING,
+                  description: "The name of the vendor/merchant in uppercase, e.g., FIGMA, AWS, GITHUB",
+                },
+                primaryBilledSeats: {
+                  type: SchemaType.INTEGER,
+                  description:
+                    "Quantity for the single primary recurring line item. Default to 1 if not seat-based.",
+                },
+                seatUnitPrice: {
+                  type: SchemaType.NUMBER,
+                  description:
+                    "Unit price for the primary line item. Default to total invoice amount if not seat-based.",
+                },
+                currency: {
+                  type: SchemaType.STRING,
+                  description: "ISO 4217 three-letter currency code, e.g. USD or INR.",
+                },
+                invoiceDate: {
+                  type: SchemaType.STRING,
+                  description: "Invoice date in strict YYYY-MM-DD format, or null if not found.",
+                },
+                renewalDate: {
+                  type: SchemaType.STRING,
+                  description: "Next renewal/expiry date in strict YYYY-MM-DD format, or null if not found.",
+                },
+                confidence: {
+                  type: SchemaType.NUMBER,
+                  description: "Self-reported confidence 0 to 1 in the primary extraction fields.",
+                },
+                extractionNotes: {
+                  type: SchemaType.STRING,
+                  description: "Short note on any fallback/guess used, or null.",
+                },
               },
-              required: ["vendorName", "primaryBilledSeats", "seatUnitPrice", "currency"]
-            } as any
-          }
+              required: ["vendorName", "primaryBilledSeats", "seatUnitPrice", "currency", "confidence"],
+            } as any,
+          },
         });
 
-        // CloudMailin provides attachments as base64 content
         let response: any;
         let attempts = 0;
         const maxAttempts = 3;
+
         while (attempts < maxAttempts) {
           try {
             attempts++;
@@ -200,16 +366,16 @@ export async function POST(request: NextRequest) {
               {
                 inlineData: {
                   data: pdfAttachment.content,
-                  mimeType: "application/pdf"
-                }
+                  mimeType: "application/pdf",
+                },
               },
-              "You are a highly accurate financial extraction AI. Analyze this PDF invoice/receipt and extract the vendorName, primaryBilledSeats, seatUnitPrice, currency, invoiceDate, and renewalDate. If the text specifies a renewal date or a date the subscription is active until (e.g., 'active until June 17, 2026' or 'will be renewed on June 18'), extract it as the renewalDate. Locate the explicit line item for 'Figma Design (seats)' or 'Professional plan'. Extract ONLY the value from the Quantity column for this row. Ignore Dev Mode quantities, subtotals, taxes, or total dollar balances."
+              instructions,
             ]);
-            break; // Success
+            break;
           } catch (err) {
             console.warn(`⚠️ Gemini PDF extraction attempt ${attempts} failed:`, err);
             if (attempts >= maxAttempts) throw err;
-            await new Promise((resolve) => setTimeout(resolve, 1500)); // wait 1.5s
+            await new Promise((resolve) => setTimeout(resolve, 1500));
           }
         }
 
@@ -240,13 +406,14 @@ export async function POST(request: NextRequest) {
 
         const structuredModel = model.withStructuredOutput(extractionSchema);
         const prompt = PromptTemplate.fromTemplate(
-          "You are a highly accurate financial extraction AI. Analyze the following email text.\n\n" +
-          "Extract the vendorName, primaryBilledSeats, seatUnitPrice, currency, invoiceDate, and renewalDate. If the text specifies a renewal date or a date the subscription is active until (e.g., 'active until June 17, 2026' or 'will be renewed on June 18'), extract it as the renewalDate. Locate the explicit line item for 'Figma Design (seats)' or 'Professional plan'. Extract ONLY the value from the Quantity column for this row. Ignore Dev Mode quantities, subtotals, taxes, or total dollar balances.\n\n" +
-          "Email text:\n{emailText}"
+          "{instructions}\n\nEmail text:\n{emailText}"
         );
 
         const chain = prompt.pipe(structuredModel);
-        extractedData = (await chain.invoke({ emailText: textBody })) as ExtractionResult;
+        extractedData = (await chain.invoke({
+          instructions,
+          emailText: textBody,
+        })) as ExtractionResult;
       } catch (textError) {
         console.error("❌ Gemini text extraction failed:", textError);
       }
@@ -255,42 +422,57 @@ export async function POST(request: NextRequest) {
     let subscriptionId: string | null = null;
     const bodyPreview = textBody.substring(0, 300);
 
+    // Track final confidence + currency-guess state for logging,
+    // since normalizeCurrency() can itself downgrade confidence.
+    let finalConfidence = extractedData?.confidence ?? 0;
+    let normalizedCurrency = extractedData?.currency ?? "USD";
+
     // 3. Database Upsert & Logging
     if (extractedData && extractedData.primaryBilledSeats > 0) {
       console.log("Gemini Extraction Success:", extractedData);
+      if (extractedData.extractionNotes) {
+        console.log(`ℹ️  Extraction note: ${extractedData.extractionNotes}`);
+      }
 
-      const isAnnual = textBody.toLowerCase().includes("annual") || 
-                       textBody.toLowerCase().includes("year") || 
-                       subject.toLowerCase().includes("annual") || 
-                       subject.toLowerCase().includes("year");
+      const { currency, wasGuessed } = normalizeCurrency(extractedData.currency);
+      normalizedCurrency = currency;
+      if (wasGuessed) {
+        finalConfidence = Math.min(finalConfidence, 0.3);
+      }
+
+      const isAnnual =
+        textBody.toLowerCase().includes("annual") ||
+        textBody.toLowerCase().includes("year") ||
+        subject.toLowerCase().includes("annual") ||
+        subject.toLowerCase().includes("year");
       const billingCycle = isAnnual ? "ANNUAL" : "MONTHLY";
 
-      let nextRenewalDate = new Date();
+      const invoiceDate = parseStrictDate(extractedData.invoiceDate);
+      const renewalDate = parseStrictDate(extractedData.renewalDate);
 
-      if (extractedData.renewalDate) {
-        const parsed = new Date(extractedData.renewalDate);
-        if (!isNaN(parsed.getTime())) {
-          nextRenewalDate = parsed;
-        }
-      } else if (extractedData.invoiceDate) {
-        const parsed = new Date(extractedData.invoiceDate);
-        if (!isNaN(parsed.getTime())) {
-          nextRenewalDate = parsed;
-          if (billingCycle === "MONTHLY") {
-            nextRenewalDate.setDate(nextRenewalDate.getDate() + 30);
-          } else {
-            nextRenewalDate.setDate(nextRenewalDate.getDate() + 365);
-          }
+      let nextRenewalDate: Date;
+
+      if (renewalDate) {
+        nextRenewalDate = renewalDate;
+      } else if (invoiceDate) {
+        nextRenewalDate = new Date(invoiceDate);
+        if (billingCycle === "MONTHLY") {
+          nextRenewalDate.setUTCDate(nextRenewalDate.getUTCDate() + 30);
+        } else {
+          nextRenewalDate.setUTCDate(nextRenewalDate.getUTCDate() + 365);
         }
       } else {
+        // No usable date in the document at all — lower confidence,
+        // since the renewal-alert engine depends entirely on this date.
+        finalConfidence = Math.min(finalConfidence, 0.4);
+        nextRenewalDate = new Date();
         if (billingCycle === "MONTHLY") {
-          nextRenewalDate.setDate(nextRenewalDate.getDate() + 30);
+          nextRenewalDate.setUTCDate(nextRenewalDate.getUTCDate() + 30);
         } else {
-          nextRenewalDate.setDate(nextRenewalDate.getDate() + 365);
+          nextRenewalDate.setUTCDate(nextRenewalDate.getUTCDate() + 365);
         }
       }
 
-      // Check if a subscription already exists (case-insensitive merchantName match)
       const existingSubscription = await prisma.subscription.findFirst({
         where: {
           workspaceId: workspace.id,
@@ -307,27 +489,29 @@ export async function POST(request: NextRequest) {
         const updated = await prisma.subscription.update({
           where: { id: existingSubscription.id },
           data: {
-            amount: amount,
-            billingCycle: billingCycle,
-            currency: extractedData.currency,
-            confidenceScore: 0.95,
+            amount,
+            billingCycle,
+            currency: normalizedCurrency,
+            confidenceScore: finalConfidence,
             nextRenewalDate,
-            status: "ACTIVE", // Re-activate if it was cancelled
+            status: "ACTIVE",
             billedSeats: extractedData.primaryBilledSeats,
             seatUnitPrice: extractedData.seatUnitPrice,
           },
         });
         subscriptionId = updated.id;
-        console.log(`✅ Updated existing subscription for "${extractedData.vendorName}" in workspace ${workspace.id}`);
+        console.log(
+          `✅ Updated existing subscription for "${extractedData.vendorName}" in workspace ${workspace.id} (confidence: ${finalConfidence})`
+        );
       } else {
         const created = await prisma.subscription.create({
           data: {
             workspaceId: workspace.id,
             merchantName: extractedData.vendorName,
-            amount: amount,
-            currency: extractedData.currency,
-            billingCycle: billingCycle,
-            confidenceScore: 0.95,
+            amount,
+            currency: normalizedCurrency,
+            billingCycle,
+            confidenceScore: finalConfidence,
             nextRenewalDate,
             status: "ACTIVE",
             billedSeats: extractedData.primaryBilledSeats,
@@ -335,27 +519,28 @@ export async function POST(request: NextRequest) {
           },
         });
         subscriptionId = created.id;
-        console.log(`✅ Created new subscription for "${extractedData.vendorName}" in workspace ${workspace.id}`);
+        console.log(
+          `✅ Created new subscription for "${extractedData.vendorName}" in workspace ${workspace.id} (confidence: ${finalConfidence})`
+        );
       }
     } else {
       console.log("ℹ️  Not identified as a subscription receipt:", extractedData);
     }
 
-    // Record the operation in EmailLog table
     await prisma.emailLog.create({
       data: {
         senderEmail: from,
-        subject: subject,
-        bodyPreview: bodyPreview,
-        source: source,
-        attachmentName: attachmentName,
-        wasReceipt: extractedData ? (extractedData.primaryBilledSeats > 0) : false,
+        subject,
+        bodyPreview,
+        source,
+        attachmentName,
+        wasReceipt: extractedData ? extractedData.primaryBilledSeats > 0 : false,
         merchantName: extractedData?.vendorName ?? null,
-        amount: extractedData ? (extractedData.primaryBilledSeats * extractedData.seatUnitPrice) : null,
-        confidenceScore: 0.95,
+        amount: extractedData ? extractedData.primaryBilledSeats * extractedData.seatUnitPrice : null,
+        confidenceScore: finalConfidence,
         rawExtraction: extractedData ? JSON.stringify(extractedData) : null,
         workspaceId: workspace.id,
-        subscriptionId: subscriptionId,
+        subscriptionId,
       },
     });
 

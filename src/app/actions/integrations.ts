@@ -15,6 +15,7 @@ export type IntegrationRow = {
   billedSeats: number | null;
   activeSeats: number | null;
   tokenUsageReport?: string | null;
+  refreshToken?: string | null;
 };
 
 /**
@@ -37,6 +38,7 @@ export async function getIntegrations(): Promise<IntegrationRow[]> {
       billedSeats: true,
       activeSeats: true,
       tokenUsageReport: true,
+      refreshToken: true,
     },
   });
 
@@ -51,6 +53,7 @@ export async function getIntegrations(): Promise<IntegrationRow[]> {
     billedSeats: i.billedSeats,
     activeSeats: i.activeSeats,
     tokenUsageReport: i.tokenUsageReport,
+    refreshToken: i.refreshToken,
   }));
 }
 
@@ -78,7 +81,9 @@ export async function triggerAudit(
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
     // Construct request with cron secret if configured
-    const url = new URL("/api/cron/optimize-seats", appUrl);
+    const isAnthropic = integration.provider === "ANTHROPIC";
+    const path = isAnthropic ? "/api/cron/sync-anthropic" : "/api/cron/optimize-seats";
+    const url = new URL(path, appUrl);
     if (process.env.CRON_SECRET) {
       url.searchParams.set("secret", process.env.CRON_SECRET);
     }
@@ -88,7 +93,7 @@ export async function triggerAudit(
     url.searchParams.set("x-vercel-protection-bypass", bypassToken);
     url.searchParams.set("x-vercel-set-bypass-cookie", "true");
 
-    console.log(`[Action] Triggering seat optimizer audit manually. Target: ${url.pathname}`);
+    console.log(`[Action] Triggering ${isAnthropic ? "Anthropic sync" : "seat optimizer audit"} manually. Target: ${url.pathname}`);
     console.log(`[Action] Server Action CRON_SECRET is defined:`, !!process.env.CRON_SECRET);
     const res = await fetch(url.toString(), {
       method: "POST",
@@ -107,29 +112,31 @@ export async function triggerAudit(
     const data = await res.json();
     console.log(`[Action] Audit completed successfully:`, data);
 
-    // After a successful manual audit, trigger evaluate-leaks to send warning email if applicable
-    try {
-      const evaluateUrl = new URL("/api/cron/evaluate-leaks", appUrl);
-      if (process.env.CRON_SECRET) {
-        evaluateUrl.searchParams.set("secret", process.env.CRON_SECRET);
-      }
-      evaluateUrl.searchParams.set("x-vercel-protection-bypass", bypassToken);
-      evaluateUrl.searchParams.set("x-vercel-set-bypass-cookie", "true");
+    // After a successful manual audit for seat-based providers, trigger evaluate-leaks
+    if (!isAnthropic) {
+      try {
+        const evaluateUrl = new URL("/api/cron/evaluate-leaks", appUrl);
+        if (process.env.CRON_SECRET) {
+          evaluateUrl.searchParams.set("secret", process.env.CRON_SECRET);
+        }
+        evaluateUrl.searchParams.set("x-vercel-protection-bypass", bypassToken);
+        evaluateUrl.searchParams.set("x-vercel-set-bypass-cookie", "true");
 
-      console.log(`[Action] Triggering seat evaluation manually after audit: ${evaluateUrl.pathname}`);
-      const evalRes = await fetch(evaluateUrl.toString(), {
-        headers: {
-          "x-vercel-protection-bypass": bypassToken,
-        },
-      });
-      if (evalRes.ok) {
-        const evalData = await evalRes.json();
-        console.log(`[Action] Seat evaluation triggered successfully:`, evalData);
-      } else {
-        console.error(`[Action] Seat evaluation failed with status ${evalRes.status}`);
+        console.log(`[Action] Triggering seat evaluation manually after audit: ${evaluateUrl.pathname}`);
+        const evalRes = await fetch(evaluateUrl.toString(), {
+          headers: {
+            "x-vercel-protection-bypass": bypassToken,
+          },
+        });
+        if (evalRes.ok) {
+          const evalData = await evalRes.json();
+          console.log(`[Action] Seat evaluation triggered successfully:`, evalData);
+        } else {
+          console.error(`[Action] Seat evaluation failed with status ${evalRes.status}`);
+        }
+      } catch (evalErr) {
+        console.error("[Action] Failed to trigger evaluate-leaks after manual audit:", evalErr);
       }
-    } catch (evalErr) {
-      console.error("[Action] Failed to trigger evaluate-leaks after manual audit:", evalErr);
     }
 
     revalidatePath("/dashboard/integrations");

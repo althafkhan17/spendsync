@@ -25,9 +25,13 @@ const navItems = [
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+export interface SidebarProps {
+  collapsed: boolean;
+  setCollapsed: (collapsed: boolean) => void;
+}
+
+export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useUser();
 
@@ -37,16 +41,16 @@ export function Sidebar() {
       <button
         id="mobile-menu-toggle"
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white shadow-sm lg:hidden"
+        className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar shadow-sm lg:hidden"
         aria-label="Open navigation menu"
       >
-        <Menu className="h-5 w-5 text-slate-600" />
+        <Menu className="h-5 w-5 text-sidebar-foreground/80" />
       </button>
 
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -55,7 +59,7 @@ export function Sidebar() {
       <aside
         id="app-sidebar"
         className={cn(
-          "fixed left-0 top-0 z-50 flex h-full flex-col border-r border-slate-200 bg-white transition-all duration-300 ease-in-out",
+          "fixed left-0 top-0 z-50 flex h-full flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300 ease-in-out",
           // Desktop: collapsed or expanded
           collapsed ? "lg:w-[72px]" : "lg:w-[260px]",
           // Mobile: off-screen or visible
@@ -64,20 +68,31 @@ export function Sidebar() {
             : "-translate-x-full lg:translate-x-0"
         )}
       >
+        {/* Floating collapse toggle (desktop only, positioned in the middle of the right border) */}
+        <button
+          id="sidebar-collapse-toggle"
+          onClick={() => setCollapsed(!collapsed)}
+          className="hidden lg:flex absolute top-1/2 -right-3 -translate-y-1/2 z-50 h-6 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground/70 hover:text-sidebar-foreground shadow-md hover:bg-sidebar-accent hover:scale-105 transition-all cursor-pointer"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? (
+            <ChevronRight className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronLeft className="h-3.5 w-3.5" />
+          )}
+        </button>
         {/* Logo / Header */}
-        <div className="flex h-16 items-center justify-between border-b border-slate-100 px-4">
+        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2.5 overflow-hidden"
+            className="flex items-center gap-2.5 overflow-hidden group"
           >
             {/* Logo icon */}
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-slate-900 to-slate-700 shadow-sm">
-              <span className="text-xs font-bold text-white tracking-tight">
-                S
-              </span>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary shadow-sm group-hover:scale-105 transition-transform duration-200">
+              <Receipt className="h-4.5 w-4.5 text-primary-foreground" />
             </div>
             {!collapsed && (
-              <span className="text-[15px] font-semibold tracking-tight text-slate-900 transition-opacity duration-200">
+              <span className="text-[15px] font-semibold tracking-tight text-sidebar-foreground transition-opacity duration-200 group-hover:text-primary">
                 SpendSync
               </span>
             )}
@@ -87,7 +102,7 @@ export function Sidebar() {
           <button
             id="mobile-menu-close"
             onClick={() => setMobileOpen(false)}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 lg:hidden"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground lg:hidden"
             aria-label="Close navigation menu"
           >
             <X className="h-4 w-4" />
@@ -110,18 +125,18 @@ export function Sidebar() {
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
+                  "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 border border-transparent",
                   isActive
-                    ? "bg-slate-900 text-white shadow-sm"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                    ? "bg-sidebar-accent text-sidebar-foreground border-sidebar-border shadow-sm"
+                    : "text-sidebar-foreground/75 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 )}
               >
                 <Icon
                   className={cn(
                     "h-[18px] w-[18px] shrink-0 transition-colors",
                     isActive
-                      ? "text-white"
-                      : "text-slate-400 group-hover:text-slate-600"
+                      ? "text-sidebar-primary"
+                      : "text-sidebar-foreground/45 group-hover:text-sidebar-foreground"
                   )}
                 />
                 {!collapsed && <span>{item.label}</span>}
@@ -130,26 +145,13 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Collapse toggle (desktop only) */}
-        <div className="hidden border-t border-slate-100 px-3 py-2 lg:block">
-          <button
-            id="sidebar-collapse-toggle"
-            onClick={() => setCollapsed(!collapsed)}
-            className="flex w-full items-center justify-center rounded-md py-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </button>
-        </div>
+        {/* Divider above user profile */}
+        <div className="hidden border-t border-sidebar-border lg:block" />
 
         {/* User Profile — Clerk UserButton */}
         <div
           id="user-profile-section"
-          className="border-t border-slate-100 px-3 py-3"
+          className="border-t border-sidebar-border px-3 py-3"
         >
           <div
             className={cn(
@@ -167,10 +169,10 @@ export function Sidebar() {
             />
             {!collapsed && user && (
               <div className="flex flex-col min-w-0 flex-1">
-                <span className="truncate text-xs font-semibold text-slate-800 leading-tight">
+                <span className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">
                   {user.fullName || user.primaryEmailAddress?.emailAddress.split("@")[0]}
                 </span>
-                <span className="truncate text-[10px] text-slate-400 font-medium mt-0.5">
+                <span className="truncate text-[10px] text-sidebar-foreground/60 font-medium mt-0.5">
                   Manage account
                 </span>
               </div>
