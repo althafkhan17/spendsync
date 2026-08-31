@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Pencil, Ban, RotateCcw, Trash2 } from "lucide-react";
+import { Pencil, Ban, RotateCcw, Trash2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { EditSubscriptionModal } from "@/components/dashboard/EditSubscriptionModal";
+import { AgentInvestigationTrace } from "@/components/dashboard/AgentInvestigationTrace";
 import {
   deleteSubscription,
   cancelSubscription,
@@ -28,6 +29,7 @@ export function SubscriptionActions({ subscription }: SubscriptionActionsProps) 
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isToggling, startToggleTransition] = useTransition();
+  const [investigateOpen, setInvestigateOpen] = useState(false);
 
   const isCancelled = subscription.status === "CANCELLED";
 
@@ -55,6 +57,31 @@ export function SubscriptionActions({ subscription }: SubscriptionActionsProps) 
 
   return (
     <div className="flex items-center gap-1">
+      {/* Agent Investigation Button — opens investigation dialog */}
+      <Dialog open={investigateOpen} onOpenChange={setInvestigateOpen}>
+        <DialogTrigger
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#00684a] transition-colors hover:bg-[#c3f0d2]/60 hover:text-[#001e2b]"
+          title="Run Agent Investigation"
+        >
+          <Sparkles className="h-4 w-4" />
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-slate-900">
+              Agent Investigation — {subscription.merchantName}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-500">
+              Multi-agent AI pipeline: Invoice extraction → Telemetry analysis → Adversarial verification.
+            </DialogDescription>
+          </DialogHeader>
+          <AgentInvestigationTrace
+            subscriptionId={subscription.id}
+            merchantName={subscription.merchantName}
+            onClose={() => setInvestigateOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Button — triggers EditSubscriptionModal */}
       <EditSubscriptionModal subscription={subscription}>
         <span

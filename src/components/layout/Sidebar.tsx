@@ -10,6 +10,7 @@ import {
   Receipt,
   Plug,
   Settings,
+  FlaskConical,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -22,6 +23,7 @@ const navItems = [
   { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
   { label: "Invoices", href: "/dashboard/invoices", icon: Receipt },
   { label: "Integrations", href: "/dashboard/integrations", icon: Plug },
+  { label: "Benchmarks", href: "/dashboard/benchmarks", icon: FlaskConical },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 

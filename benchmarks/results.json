@@ -1,0 +1,536 @@
+{
+  "timestamp": "2026-08-30T12:18:35.351Z",
+  "totalCases": 16,
+  "metrics": {
+    "baseline": {
+      "avgPrecision": 90.6,
+      "avgRecall": 100,
+      "totalDangerousCuts": 4,
+      "contractAdherencePct": 93.8,
+      "evidenceTraceabilityPct": 18,
+      "avgDurationMs": 12
+    },
+    "multiAgent": {
+      "avgPrecision": 100,
+      "avgRecall": 100,
+      "totalDangerousCuts": 0,
+      "contractAdherencePct": 100,
+      "evidenceTraceabilityPct": 100,
+      "avgDurationMs": 8
+    }
+  },
+  "results": [
+    {
+      "caseId": "case-01-figma-standard",
+      "caseName": "Figma Professional — Standard Dormancy",
+      "category": "STRAIGHTFORWARD",
+      "groundTruth": {
+        "expectedCutSeats": 3,
+        "expectedSavings": 45,
+        "expectedProtectedShields": 0
+      },
+      "baseline": {
+        "recommendedCuts": 3,
+        "estimatedSavings": 45,
+        "dangerousCuts": 0,
+        "contractMinRespected": true,
+        "precision": 1,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 3,
+        "verifiedSavings": 45,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 0,
+        "confidenceScore": 1,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-02-slack-inactive",
+      "caseName": "Slack Business+ — Obvious Dormancy",
+      "category": "STRAIGHTFORWARD",
+      "groundTruth": {
+        "expectedCutSeats": 2,
+        "expectedSavings": 30,
+        "expectedProtectedShields": 0
+      },
+      "baseline": {
+        "recommendedCuts": 2,
+        "estimatedSavings": 30,
+        "dangerousCuts": 0,
+        "contractMinRespected": true,
+        "precision": 1,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 2,
+        "verifiedSavings": 30,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 0,
+        "confidenceScore": 1,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-03-copilot-devs",
+      "caseName": "GitHub Copilot Business — Idle Engineers",
+      "category": "STRAIGHTFORWARD",
+      "groundTruth": {
+        "expectedCutSeats": 2,
+        "expectedSavings": 38,
+        "expectedProtectedShields": 0
+      },
+      "baseline": {
+        "recommendedCuts": 2,
+        "estimatedSavings": 38,
+        "dangerousCuts": 0,
+        "contractMinRespected": true,
+        "precision": 1,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 2,
+        "verifiedSavings": 38,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 0,
+        "confidenceScore": 1,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-04-zoom-pro",
+      "caseName": "Zoom Workplace Pro — Dormant Hosts",
+      "category": "STRAIGHTFORWARD",
+      "groundTruth": {
+        "expectedCutSeats": 1,
+        "expectedSavings": 16,
+        "expectedProtectedShields": 0
+      },
+      "baseline": {
+        "recommendedCuts": 1,
+        "estimatedSavings": 16,
+        "dangerousCuts": 0,
+        "contractMinRespected": true,
+        "precision": 1,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 1,
+        "verifiedSavings": 16,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 0,
+        "confidenceScore": 1,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-05-notion-plus",
+      "caseName": "Notion Plus — Departed Contractor",
+      "category": "STRAIGHTFORWARD",
+      "groundTruth": {
+        "expectedCutSeats": 1,
+        "expectedSavings": 10,
+        "expectedProtectedShields": 0
+      },
+      "baseline": {
+        "recommendedCuts": 1,
+        "estimatedSavings": 10,
+        "dangerousCuts": 0,
+        "contractMinRespected": true,
+        "precision": 1,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 1,
+        "verifiedSavings": 10,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 0,
+        "confidenceScore": 1,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-06-bot-shielding",
+      "caseName": "GitHub Copilot — Service & Bot Account Shielding",
+      "category": "DIFFICULT",
+      "groundTruth": {
+        "expectedCutSeats": 1,
+        "expectedSavings": 19,
+        "expectedProtectedShields": 2
+      },
+      "baseline": {
+        "recommendedCuts": 3,
+        "estimatedSavings": 57,
+        "dangerousCuts": 2,
+        "contractMinRespected": true,
+        "precision": 0.33,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 1,
+        "verifiedSavings": 19,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 1,
+        "contractMinRespected": true,
+        "issuesCount": 1,
+        "confidenceScore": 0.85,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-07-contract-floor",
+      "caseName": "Figma Enterprise — 15-Seat Contractual Floor Clamping",
+      "category": "DIFFICULT",
+      "groundTruth": {
+        "expectedCutSeats": 5,
+        "expectedSavings": 225,
+        "expectedProtectedShields": 0
+      },
+      "baseline": {
+        "recommendedCuts": 8,
+        "estimatedSavings": 360,
+        "dangerousCuts": 0,
+        "contractMinRespected": false,
+        "precision": 1,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 5,
+        "verifiedSavings": 225,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 1,
+        "confidenceScore": 0.92,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-08-borderline-threshold",
+      "caseName": "Slack Pro — Borderline Inactivity (31 Days vs 30d Threshold)",
+      "category": "DIFFICULT",
+      "groundTruth": {
+        "expectedCutSeats": 1,
+        "expectedSavings": 12.5,
+        "expectedProtectedShields": 0
+      },
+      "baseline": {
+        "recommendedCuts": 2,
+        "estimatedSavings": 25,
+        "dangerousCuts": 0,
+        "contractMinRespected": true,
+        "precision": 1,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 1,
+        "verifiedSavings": 12.5,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 1,
+        "confidenceScore": 0.92,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-09-admin-security-shield",
+      "caseName": "AWS IAM / SSO — Security Officer Shielding",
+      "category": "DIFFICULT",
+      "groundTruth": {
+        "expectedCutSeats": 1,
+        "expectedSavings": 40,
+        "expectedProtectedShields": 1
+      },
+      "baseline": {
+        "recommendedCuts": 2,
+        "estimatedSavings": 80,
+        "dangerousCuts": 1,
+        "contractMinRespected": true,
+        "precision": 0.5,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 1,
+        "verifiedSavings": 40,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 1,
+        "contractMinRespected": true,
+        "issuesCount": 1,
+        "confidenceScore": 0.85,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-10-tiered-volume-trap",
+      "caseName": "HubSpot CRM — Tiered Pricing Boundary",
+      "category": "DIFFICULT",
+      "groundTruth": {
+        "expectedCutSeats": 2,
+        "expectedSavings": 100,
+        "expectedProtectedShields": 0
+      },
+      "baseline": {
+        "recommendedCuts": 2,
+        "estimatedSavings": 100,
+        "dangerousCuts": 0,
+        "contractMinRespected": true,
+        "precision": 1,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 2,
+        "verifiedSavings": 100,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 0,
+        "confidenceScore": 1,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-11-tax-line-item-filter",
+      "caseName": "Datadog — State Tax & Proration Row Filtering",
+      "category": "DIFFICULT",
+      "groundTruth": {
+        "expectedCutSeats": 2,
+        "expectedSavings": 30,
+        "expectedProtectedShields": 0
+      },
+      "baseline": {
+        "recommendedCuts": 2,
+        "estimatedSavings": 30,
+        "dangerousCuts": 0,
+        "contractMinRespected": true,
+        "precision": 1,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 2,
+        "verifiedSavings": 30,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 0,
+        "confidenceScore": 1,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-12-zero-dormancy",
+      "caseName": "Linear — 100% Active Team (Zero Dormancy)",
+      "category": "EDGE_CASE",
+      "groundTruth": {
+        "expectedCutSeats": 0,
+        "expectedSavings": 0,
+        "expectedProtectedShields": 0
+      },
+      "baseline": {
+        "recommendedCuts": 0,
+        "estimatedSavings": 0,
+        "dangerousCuts": 0,
+        "contractMinRespected": true,
+        "precision": 1,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 0,
+        "verifiedSavings": 0,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 0,
+        "confidenceScore": 1,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-13-annual-prepaid-no-refund",
+      "caseName": "Miro Enterprise — Annual Prepaid Lock-In",
+      "category": "EDGE_CASE",
+      "groundTruth": {
+        "expectedCutSeats": 3,
+        "expectedSavings": 48,
+        "expectedProtectedShields": 0
+      },
+      "baseline": {
+        "recommendedCuts": 3,
+        "estimatedSavings": 48,
+        "dangerousCuts": 0,
+        "contractMinRespected": true,
+        "precision": 1,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 3,
+        "verifiedSavings": 48,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 0,
+        "confidenceScore": 1,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-14-imminent-renewal",
+      "caseName": "Vercel Pro — Imminent 24-Hour Auto-Renewal",
+      "category": "EDGE_CASE",
+      "groundTruth": {
+        "expectedCutSeats": 2,
+        "expectedSavings": 40,
+        "expectedProtectedShields": 0
+      },
+      "baseline": {
+        "recommendedCuts": 2,
+        "estimatedSavings": 40,
+        "dangerousCuts": 0,
+        "contractMinRespected": true,
+        "precision": 1,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 2,
+        "verifiedSavings": 40,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 0,
+        "confidenceScore": 1,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-15-corrupted-telemetry",
+      "caseName": "Jira Software — Missing & Corrupted Timestamps",
+      "category": "EDGE_CASE",
+      "groundTruth": {
+        "expectedCutSeats": 2,
+        "expectedSavings": 17,
+        "expectedProtectedShields": 1
+      },
+      "baseline": {
+        "recommendedCuts": 3,
+        "estimatedSavings": 25.5,
+        "dangerousCuts": 1,
+        "contractMinRespected": true,
+        "precision": 0.67,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 2,
+        "verifiedSavings": 17,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 0,
+        "confidenceScore": 1,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    },
+    {
+      "caseId": "case-16-duplicate-aliases",
+      "caseName": "Asana Enterprise — Duplicate Employee Aliases",
+      "category": "EDGE_CASE",
+      "groundTruth": {
+        "expectedCutSeats": 1,
+        "expectedSavings": 30.49,
+        "expectedProtectedShields": 0
+      },
+      "baseline": {
+        "recommendedCuts": 1,
+        "estimatedSavings": 30.49,
+        "dangerousCuts": 0,
+        "contractMinRespected": true,
+        "precision": 1,
+        "recall": 1,
+        "durationMs": 12
+      },
+      "multiAgent": {
+        "recommendedCuts": 1,
+        "verifiedSavings": 30.49,
+        "dangerousCuts": 0,
+        "protectedShieldsCount": 0,
+        "contractMinRespected": true,
+        "issuesCount": 0,
+        "confidenceScore": 1,
+        "precision": 1,
+        "recall": 1,
+        "traceStepsCount": 4,
+        "durationMs": 8
+      }
+    }
+  ]
+}

@@ -77,7 +77,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Subscriptions Table — real data */}
-        <SubscriptionTable subscriptions={subscriptions} />
+        <SubscriptionTable subscriptions={subscriptions} showActions={true} />
       </>
     );
   } catch (error) {

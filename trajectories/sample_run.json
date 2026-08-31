@@ -1,0 +1,125 @@
+{
+  "metadata": {
+    "runId": "run_spendsync_copilot_enterprise_001",
+    "timestamp": "2026-08-30T17:40:00.000Z",
+    "targetVendor": "GitHub Copilot Enterprise",
+    "scenario": "Difficult: Service Bot Shielding & Contractual Minimum Floor Clamping",
+    "executionTimeMs": 48
+  },
+  "inputs": {
+    "invoice": {
+      "rawText": "GitHub, Inc. Master Subscription Agreement Invoice #GH-88291\nBill To: Acme Engineering Corp\nProduct: GitHub Copilot Enterprise Edition\nLine 1: 20 Enterprise Seats @ $21.00 USD/seat/month = $420.00 USD\nBilling Frequency: Monthly Recurring\nNext Renewal Date: 2026-09-15\nContractual Terms: Customer commits to a minimum annual baseline of 10 seats. Total seats cannot be downgraded below 10 prior to annual renewal.",
+      "vendorName": "GITHUB_COPILOT",
+      "billedSeats": 20,
+      "seatUnitPrice": 21.00,
+      "totalAmount": 420.00,
+      "currency": "USD",
+      "contractMinimumSeats": 10
+    },
+    "telemetry": {
+      "inactivityThresholdDays": 30,
+      "totalUsers": 20,
+      "users": [
+        { "id": "dev-01", "name": "Alex Mercer", "email": "alex@acme.com", "role": "engineer", "lastActiveAt": "2026-08-28T10:00:00Z", "activityCount": 142 },
+        { "id": "dev-02", "name": "Beth Harmon", "email": "beth@acme.com", "role": "engineer", "lastActiveAt": "2026-08-25T14:30:00Z", "activityCount": 89 },
+        { "id": "dev-03", "name": "Carlos Sainz", "email": "carlos@acme.com", "role": "engineer", "lastActiveAt": "2026-08-29T09:15:00Z", "activityCount": 210 },
+        { "id": "dev-04", "name": "Daria Morgendorffer", "email": "daria@acme.com", "role": "engineer", "lastActiveAt": "2026-08-27T16:00:00Z", "activityCount": 78 },
+        { "id": "dev-05", "name": "Elliot Alderson", "email": "elliot@acme.com", "role": "engineer", "lastActiveAt": "2026-08-26T11:45:00Z", "activityCount": 310 },
+        { "id": "dev-06", "name": "Fiona Gallagher", "email": "fiona@acme.com", "role": "engineer", "lastActiveAt": "2026-08-24T18:20:00Z", "activityCount": 94 },
+        { "id": "dev-07", "name": "Geralt Rivia", "email": "geralt@acme.com", "role": "engineer", "lastActiveAt": "2026-08-29T13:00:00Z", "activityCount": 165 },
+        { "id": "dev-08", "name": "Hannah Abbott", "email": "hannah@acme.com", "role": "engineer", "lastActiveAt": "2026-08-28T08:30:00Z", "activityCount": 52 },
+        { "id": "dev-09", "name": "Ian Malcolm", "email": "ian@acme.com", "role": "engineer", "lastActiveAt": "2026-08-30T07:15:00Z", "activityCount": 44 },
+        { "id": "dev-10", "name": "Julia Roberts", "email": "julia@acme.com", "role": "engineer", "lastActiveAt": "2026-07-29T12:00:00Z", "activityCount": 5 },
+        { "id": "dev-11", "name": "Ex Contractor 1", "email": "contractor1@acme.com", "role": "member", "lastActiveAt": "2026-05-10T10:00:00Z", "activityCount": 0 },
+        { "id": "dev-12", "name": "Ex Contractor 2", "email": "contractor2@acme.com", "role": "member", "lastActiveAt": "2026-04-12T10:00:00Z", "activityCount": 0 },
+        { "id": "dev-13", "name": "Ex Contractor 3", "email": "contractor3@acme.com", "role": "member", "lastActiveAt": "2026-05-01T10:00:00Z", "activityCount": 0 },
+        { "id": "dev-14", "name": "Ex Contractor 4", "email": "contractor4@acme.com", "role": "member", "lastActiveAt": "2026-05-20T10:00:00Z", "activityCount": 0 },
+        { "id": "dev-15", "name": "Ex Contractor 5", "email": "contractor5@acme.com", "role": "member", "lastActiveAt": "2026-05-15T10:00:00Z", "activityCount": 0 },
+        { "id": "dev-16", "name": "Ex Contractor 6", "email": "contractor6@acme.com", "role": "member", "lastActiveAt": "2026-05-22T10:00:00Z", "activityCount": 0 },
+        { "id": "dev-17", "name": "Ex Contractor 7", "email": "contractor7@acme.com", "role": "member", "lastActiveAt": "2026-05-18T10:00:00Z", "activityCount": 0 },
+        { "id": "dev-18", "name": "Ex Contractor 8", "email": "contractor8@acme.com", "role": "member", "lastActiveAt": "2026-04-30T10:00:00Z", "activityCount": 0 },
+        { "id": "dev-19", "name": "Ex Contractor 9", "email": "contractor9@acme.com", "role": "member", "lastActiveAt": "2026-05-05T10:00:00Z", "activityCount": 0 },
+        { "id": "bot-20", "name": "GitHub Actions CI Runner", "email": "github-actions-bot@acme.com", "role": "service", "lastActiveAt": null, "activityCount": 0 }
+      ]
+    }
+  },
+  "traces": [
+    {
+      "step": 1,
+      "agentName": "InvoiceAgent",
+      "stepName": "Extract Invoice Data & Contract Minimums",
+      "inputSummary": "Text (412 chars)",
+      "findings": "Extracted GITHUB_COPILOT: 20 seats × USD 21/seat = USD 420. Contract min commitment: 10 seats. Primary line item: GitHub Copilot Enterprise Edition.",
+      "status": "SUCCESS",
+      "timestamp": "2026-08-30T17:40:00.010Z",
+      "durationMs": 14
+    },
+    {
+      "step": 2,
+      "agentName": "TelemetryAgent",
+      "stepName": "Evaluate User Telemetry & Detect Protected Entities",
+      "inputSummary": "20 users, 30-day inactivity threshold",
+      "findings": "Classified 20 users: 9 active, 10 dormant, 1 protected (github-actions-bot@acme.com matched pattern 'bot'), 1 borderline (Julia Roberts, 32d inactive). 9 non-protected dormant seats eligible for review.",
+      "status": "SUCCESS",
+      "timestamp": "2026-08-30T17:40:00.024Z",
+      "durationMs": 9
+    },
+    {
+      "step": 3,
+      "agentName": "VerifierAgent",
+      "stepName": "Adversarial Rule Verification & Bounds Clamping",
+      "inputSummary": "Invoice: GITHUB_COPILOT (20 seats, min 10). Telemetry: 20 users (10 raw dormant).",
+      "findings": "Verified 9 safe cuts → USD 189.00/mo savings. 2 issue(s) flagged: Shielded 1 protected bot account (github-actions-bot@acme.com) from deprovisioning; Deferred 1 borderline user (Julia Roberts) to human review. Clamped candidate cuts to contract minimum bound (20 billed - 10 min = 10 max cuts allowed, 9 requested <= 10). Math integrity verified: 9 cuts × $21.00 = $189.00/mo.",
+      "status": "WARNING",
+      "timestamp": "2026-08-30T17:40:00.038Z",
+      "durationMs": 12
+    },
+    {
+      "step": 4,
+      "agentName": "Orchestrator",
+      "stepName": "Pipeline Complete & Governance Package Assembly",
+      "inputSummary": "3-stage pipeline for GITHUB_COPILOT",
+      "findings": "Pipeline completed in 48ms. Final recommendation: 9 seat cuts → USD 189.00/mo ($2,268.00/year) savings with 0.84 calibrated confidence score. 2 total issues logged.",
+      "status": "SUCCESS",
+      "timestamp": "2026-08-30T17:40:00.048Z",
+      "durationMs": 48
+    }
+  ],
+  "verificationIssues": [
+    {
+      "type": "PROTECTED_ACCOUNT",
+      "severity": "HIGH",
+      "description": "Account 'GitHub Actions CI Runner' (github-actions-bot@acme.com) appears dormant (no human IDE commits) but is flagged as a protected service account: Matched pattern 'bot'. Deprovisioning rejected.",
+      "affectedItem": "github-actions-bot@acme.com"
+    },
+    {
+      "type": "AMBIGUOUS_ACTIVITY",
+      "severity": "MEDIUM",
+      "description": "Account 'Julia Roberts' (julia@acme.com) has borderline activity (32 days since last active, threshold: 30 days). Marked as REQUIRES_HUMAN_REVIEW — not auto-included in cuts.",
+      "affectedItem": "julia@acme.com"
+    }
+  ],
+  "finalProposal": {
+    "recommendedCuts": 9,
+    "monthlySavings": 189.00,
+    "annualProjectedSavings": 2268.00,
+    "confidenceScore": 0.84,
+    "actionPlan": [
+      "Investigation completed for GITHUB_COPILOT in 0.05s.",
+      "Recommendation: Review 9 seat(s) for potential deprovisioning to save USD 189.00/month ($2,268.00/yr).",
+      "Dormant accounts identified for review:",
+      "  • Ex Contractor 1 (contractor1@acme.com) — 112 days inactive",
+      "  • Ex Contractor 2 (contractor2@acme.com) — 140 days inactive",
+      "  • Ex Contractor 3 (contractor3@acme.com) — 121 days inactive",
+      "  • Ex Contractor 4 (contractor4@acme.com) — 102 days inactive",
+      "  • Ex Contractor 5 (contractor5@acme.com) — 107 days inactive",
+      "  • Ex Contractor 6 (contractor6@acme.com) — 100 days inactive",
+      "  • Ex Contractor 7 (contractor7@acme.com) — 104 days inactive",
+      "  • Ex Contractor 8 (contractor8@acme.com) — 122 days inactive",
+      "  • Ex Contractor 9 (contractor9@acme.com) — 117 days inactive",
+      "⚠️ Contract minimum: 10 seats. Retaining 11 active seats satisfies the 10-seat floor commitment.",
+      "1 additional user (Julia Roberts) has borderline activity. Deferred for human reviewer decision.",
+      "Next steps: Launch the Sandbox Simulation in SpendSync to preview ledger impact, then approve staged deprovisioning with 14-day rollback guarantee."
+    ]
+  }
+}
