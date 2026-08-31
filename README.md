@@ -1,4 +1,4 @@
-# SpendSync ⚡
+# SpendSync 
 ### Autonomous SaaS Cost Optimization with Adversarial Verification
 
 > **micro1 Agentic Workflows Hackathon Submission**  
@@ -217,4 +217,3 @@ By combining **Gemini 2.5 Flash for document parsing** with a **deterministic, r
 
 ---
 
-*Built for the micro1 Agentic Workflows Hackathon.*
