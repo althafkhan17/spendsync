@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ensureUserAndWorkspace } from "@/lib/auth-sync";
+import { runSeatAudit } from "@/lib/engines/seat-audit";
+import { runAnthropicSync } from "@/lib/engines/anthropic-sync";
+import { evaluateLeaks } from "@/lib/engines/leak-evaluation";
 
 export type IntegrationRow = {
   id: string;
@@ -14,12 +17,15 @@ export type IntegrationRow = {
   wastedAmount: number | null;
   billedSeats: number | null;
   activeSeats: number | null;
-  tokenUsageReport?: string | null;
-  refreshToken?: string | null;
+  /** JSON audit report (see src/lib/audit-report.ts). */
+  tokenUsageReport: string | null;
+  /** Provider-specific public setting: org slug for GitHub, USD threshold for Anthropic. */
+  refreshToken: string | null;
 };
 
 /**
  * Fetch all integrations for the current user's workspace.
+ * Never returns access tokens.
  */
 export async function getIntegrations(): Promise<IntegrationRow[]> {
   const { workspaceId } = await ensureUserAndWorkspace();
@@ -53,127 +59,85 @@ export async function getIntegrations(): Promise<IntegrationRow[]> {
     billedSeats: i.billedSeats,
     activeSeats: i.activeSeats,
     tokenUsageReport: i.tokenUsageReport,
-    refreshToken: i.refreshToken,
+    // Figma stores a real OAuth refresh token here; never expose it.
+    refreshToken: i.provider === "FIGMA" ? null : i.refreshToken,
   }));
 }
 
+export type AuditTriggerResult = {
+  success: boolean;
+  error?: string;
+  dataSource?: "LIVE" | "SIMULATED";
+  summary?: string;
+};
+
 /**
- * Manually trigger the seat optimizer cron endpoint for this workspace.
+ * Run the relevant engine for one integration right now.
+ * Calls the engine in-process so it works locally, in preview deployments,
+ * and behind Vercel deployment protection without any extra tokens.
  */
-export async function triggerAudit(
-  integrationId: string
-): Promise<{ success: boolean; error?: string }> {
+export async function triggerAudit(integrationId: string): Promise<AuditTriggerResult> {
   try {
     const { workspaceId } = await ensureUserAndWorkspace();
 
-    // IDOR guard: verify integration belongs to this workspace
-    const integration = await prisma.integration.findFirst({
-      where: {
-        id: integrationId,
-        workspaceId,
-      },
-    });
-
+    const integration = await prisma.integration.findFirst({ where: { id: integrationId, workspaceId } });
     if (!integration) {
       return { success: false, error: "Integration not found or access denied" };
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-    // Construct request with cron secret if configured
-    const isAnthropic = integration.provider === "ANTHROPIC";
-    const path = isAnthropic ? "/api/cron/sync-anthropic" : "/api/cron/optimize-seats";
-    const url = new URL(path, appUrl);
-    if (process.env.CRON_SECRET) {
-      url.searchParams.set("secret", process.env.CRON_SECRET);
-    }
-
-    // Add Vercel protection bypass token to bypass deployment protection auth gate
-    const bypassToken = process.env.VERCEL_PROTECTION_BYPASS || "tgHytrll5Ljme0kAkGhYoGap7mmIOcTE";
-    url.searchParams.set("x-vercel-protection-bypass", bypassToken);
-    url.searchParams.set("x-vercel-set-bypass-cookie", "true");
-
-    console.log(`[Action] Triggering ${isAnthropic ? "Anthropic sync" : "seat optimizer audit"} manually. Target: ${url.pathname}`);
-    console.log(`[Action] Server Action CRON_SECRET is defined:`, !!process.env.CRON_SECRET);
-    const res = await fetch(url.toString(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-vercel-protection-bypass": bypassToken,
-      },
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error(`[Action] Audit API returned error ${res.status}:`, errorText);
-      return { success: false, error: `Audit server returned status ${res.status}` };
-    }
-
-    const data = await res.json();
-    console.log(`[Action] Audit completed successfully:`, data);
-
-    // After a successful manual audit for seat-based providers, trigger evaluate-leaks
-    if (!isAnthropic) {
-      try {
-        const evaluateUrl = new URL("/api/cron/evaluate-leaks", appUrl);
-        if (process.env.CRON_SECRET) {
-          evaluateUrl.searchParams.set("secret", process.env.CRON_SECRET);
-        }
-        evaluateUrl.searchParams.set("x-vercel-protection-bypass", bypassToken);
-        evaluateUrl.searchParams.set("x-vercel-set-bypass-cookie", "true");
-
-        console.log(`[Action] Triggering seat evaluation manually after audit: ${evaluateUrl.pathname}`);
-        const evalRes = await fetch(evaluateUrl.toString(), {
-          headers: {
-            "x-vercel-protection-bypass": bypassToken,
-          },
-        });
-        if (evalRes.ok) {
-          const evalData = await evalRes.json();
-          console.log(`[Action] Seat evaluation triggered successfully:`, evalData);
-        } else {
-          console.error(`[Action] Seat evaluation failed with status ${evalRes.status}`);
-        }
-      } catch (evalErr) {
-        console.error("[Action] Failed to trigger evaluate-leaks after manual audit:", evalErr);
+    if (integration.provider === "ANTHROPIC") {
+      const [result] = await runAnthropicSync({ integrationId });
+      revalidatePath("/dashboard/integrations");
+      revalidatePath("/dashboard");
+      if (!result || !result.success) {
+        return { success: false, error: result?.error ?? "Sync failed" };
       }
+      return {
+        success: true,
+        dataSource: result.dataSource,
+        summary: `Month-to-date spend $${(result.totalCostUsd ?? 0).toFixed(2)} of $${(result.thresholdUsd ?? 0).toFixed(2)} budget`,
+      };
+    }
+
+    const [result] = await runSeatAudit({ integrationId });
+    if (!result || result.status !== "SUCCESS") {
+      revalidatePath("/dashboard/integrations");
+      return { success: false, error: result?.error ?? "Audit failed" };
+    }
+
+    // Immediately evaluate whether this leak needs a renewal warning.
+    try {
+      await evaluateLeaks({ workspaceId });
+    } catch (err) {
+      console.error("[Action] Leak evaluation after audit failed:", err);
     }
 
     revalidatePath("/dashboard/integrations");
-    return { success: true };
-  } catch (error: any) {
-    console.error("❌ Failed to trigger audit manually:", error);
-    return { success: false, error: error.message || "Failed to trigger audit" };
+    revalidatePath("/dashboard");
+    return {
+      success: true,
+      dataSource: result.dataSource,
+      summary: `${result.wastedSeats ?? 0} idle of ${result.billedSeats ?? 0} billed seats`,
+    };
+  } catch (error) {
+    console.error("❌ Failed to trigger audit:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Failed to trigger audit" };
   }
 }
 
 /**
- * Disconnect (hard-delete) an integration by ID.
- * Enforces IDOR guard — only allows deletion within the user's own workspace.
+ * Disconnect (hard-delete) an integration by ID within the user's workspace.
  */
-export async function disconnectIntegration(
-  integrationId: string
-): Promise<{ success: boolean; error?: string }> {
+export async function disconnectIntegration(integrationId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const { workspaceId } = await ensureUserAndWorkspace();
-
-    // IDOR guard: verify integration belongs to this workspace
-    const integration = await prisma.integration.findFirst({
-      where: {
-        id: integrationId,
-        workspaceId,
-      },
-    });
-
+    const integration = await prisma.integration.findFirst({ where: { id: integrationId, workspaceId } });
     if (!integration) {
       return { success: false, error: "Integration not found or access denied" };
     }
-
-    await prisma.integration.delete({
-      where: { id: integrationId },
-    });
-
+    await prisma.integration.delete({ where: { id: integrationId } });
     revalidatePath("/dashboard/integrations");
+    revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
     console.error("❌ Failed to disconnect integration:", error);

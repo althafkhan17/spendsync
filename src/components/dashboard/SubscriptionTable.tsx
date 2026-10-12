@@ -72,7 +72,7 @@ function formatCurrency(amount: number, currencyCode: string) {
       style: "currency",
       currency: currencyCode || "USD",
     }).format(amount);
-  } catch (error) {
+  } catch {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",

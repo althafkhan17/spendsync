@@ -2,12 +2,17 @@
 
 import React, { useState, useTransition, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { Key, ShieldAlert, Eye, EyeOff, Clock, Sparkles, X, Users, Gauge } from "lucide-react";
 import { disconnectIntegration, triggerAudit } from "@/app/actions/integrations";
 import { connectGithubCopilot } from "@/app/actions/integrations/connect-github";
 import { connectAnthropic } from "@/app/actions/integrations/connect-anthropic";
-import { Key, ShieldAlert, Eye, EyeOff } from "lucide-react";
 import type { IntegrationRow } from "@/app/actions/integrations";
 import { cn } from "@/lib/utils";
+import { parseAuditReport, isSeatReport, isTokenReport } from "@/lib/audit-report";
+import { formatMoney, relativeTime } from "@/lib/format";
+import { DataSourceBadge } from "@/components/dashboard/DataSourceBadge";
+import { SeatAuditModal } from "@/components/dashboard/SeatAuditModal";
+import { TokenSpendModal, budgetTone } from "@/components/dashboard/TokenSpendModal";
 
 // ─────────────────────────────────────────────────────────
 // Provider metadata — icons, colors, descriptions
@@ -117,91 +122,65 @@ export const PROVIDERS: Record<string, ProviderMeta> = {
   },
 };
 
+/** Providers with a working connect flow. Everything else shows "Coming soon". */
+const CONNECTABLE = new Set(["FIGMA", "GITHUB_COPILOT", "ANTHROPIC"]);
+
+const DEMO_GITHUB = { org: "acme-labs", token: "mock_demo_github_token" };
+const DEMO_ANTHROPIC_KEY = "sk-ant-test-mock";
+
+type Notice = { type: "success" | "error" | "info"; text: string };
+
 // ─────────────────────────────────────────────────────────
 // IntegrationCard component
 // ─────────────────────────────────────────────────────────
 
-export function IntegrationCard({
-  providerKey,
-  integration,
-}: {
-  providerKey: string;
-  integration?: IntegrationRow;
-}) {
+export function IntegrationCard({ providerKey, integration }: { providerKey: string; integration?: IntegrationRow }) {
   const meta = PROVIDERS[providerKey];
   const isConnected = !!integration && integration.isActive;
   const [isPending, startTransition] = useTransition();
   const [showConfirm, setShowConfirm] = useState(false);
   const [isAuditing, setIsAuditing] = useState(false);
-  const [auditError, setAuditError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orgSlug, setOrgSlug] = useState("");
   const [githubToken, setGithubToken] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [modalError, setModalError] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
-  const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [threshold, setThreshold] = useState("50.00");
   const [showKey, setShowKey] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  // Portals are only rendered after a user click, so `document` is always available by then.
+  const canPortal = typeof document !== "undefined";
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 12_000);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   if (!meta) return null;
 
-  let report: any = null;
-  if (integration?.tokenUsageReport) {
-    try {
-      report = JSON.parse(integration.tokenUsageReport);
-    } catch (e) {
-      console.log("Failed to parse tokenUsageReport:", e);
-    }
-  }
-
-  const isReportArray = Array.isArray(report);
-  const reportArray = isReportArray ? report : (report?.individualSeats ?? []);
-  const seatsCount = report ? (isReportArray ? report.length : (report.individualSeats?.length ?? 0)) : 0;
-
-  const totalTokens = isReportArray
-    ? report.reduce((sum: number, item: any) => {
-        if (item.inputTokens !== undefined || item.outputTokens !== undefined) {
-          return sum + (item.inputTokens ?? 0) + (item.outputTokens ?? 0);
-        }
-        return sum;
-      }, 0)
-    : 0;
-
-  const uniqueModels = Array.from(
-    new Set(
-      reportArray.map((item: any) => item.model || item.primaryModel).filter((m: any) => m && m !== "None")
-    )
-  ).length;
-
-  const totalLeak = isReportArray
-    ? report.reduce((sum: number, item: any) => {
-        if (item.status === "ABSOLUTE_LEAK") {
-          return sum + (item.assignedSeats ?? 1) * 19;
-        }
-        if (item.inputTokens === 0 && item.outputTokens === 0) {
-          return sum + 19;
-        }
-        return sum;
-      }, 0)
-    : (report?.totalMonthlyLeak ?? 19.00);
+  const report = parseAuditReport(integration?.tokenUsageReport);
+  const seatReport = isSeatReport(report) ? report : null;
+  const tokenReport = isTokenReport(report) ? report : null;
 
   const handleRunAudit = async () => {
     if (!integration) return;
     setIsAuditing(true);
-    setAuditError(null);
+    setNotice(null);
     try {
       const res = await triggerAudit(integration.id);
       if (!res.success) {
-        setAuditError(res.error || "Audit failed");
+        setNotice({ type: "error", text: res.error || "Audit failed" });
+      } else {
+        setNotice({
+          type: "success",
+          text: `${res.summary ?? "Audit complete"}${res.dataSource === "SIMULATED" ? " (simulated data)" : ""}`,
+        });
       }
-    } catch (err: any) {
-      setAuditError(err.message || "Audit failed");
+    } catch (err) {
+      setNotice({ type: "error", text: err instanceof Error ? err.message : "Audit failed" });
     } finally {
       setIsAuditing(false);
     }
@@ -215,80 +194,52 @@ export function IntegrationCard({
     });
   };
 
+  const openConnect = () => {
+    setIsModalOpen(true);
+    setModalError(null);
+    setOrgSlug("");
+    setGithubToken("");
+    setApiKey("");
+    setThreshold("50.00");
+    setShowKey(false);
+  };
+
+  const connectable = CONNECTABLE.has(providerKey);
+
   return (
     <div
       id={`integration-card-${providerKey.toLowerCase()}`}
       className={cn(
-        "group relative flex flex-col h-full rounded-lg border bg-white shadow-sm transition-all duration-300",
-        "hover:shadow-md hover:-translate-y-0.5",
-        isConnected
-          ? "border-[#00ed64]/30"
-          : "border-hairline"
+        "group relative flex h-full flex-col rounded-lg border bg-white shadow-sm transition-all duration-300",
+        "hover:-translate-y-0.5 hover:shadow-md",
+        isConnected ? "border-[#00ed64]/30" : "border-hairline"
       )}
     >
-      {/* Subtle gradient overlay */}
-      <div
-        className={cn(
-          "absolute inset-0 rounded-lg bg-gradient-to-br opacity-0 transition-opacity duration-300 group-hover:opacity-100",
-          meta.gradient
-        )}
-      />
+      <div className={cn("absolute inset-0 rounded-lg bg-gradient-to-br opacity-0 transition-opacity duration-300 group-hover:opacity-100", meta.gradient)} />
 
-      {/* Card content */}
       <div className="relative z-10 flex flex-1 flex-col p-6">
-        {/* Header: icon + name + status */}
-        <div className="flex items-start justify-between">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3.5">
-            {/* Provider icon */}
-            <div
-              className={cn(
-                "flex h-11 w-11 items-center justify-center rounded-lg shadow-sm transition-transform duration-300 group-hover:scale-105",
-                meta.iconBg
-              )}
-            >
+            <div className={cn("flex h-11 w-11 items-center justify-center rounded-lg shadow-sm transition-transform duration-300 group-hover:scale-105", meta.iconBg)}>
               {meta.icon}
             </div>
             <div>
-              <h3 className="text-[15px] font-semibold text-ink">
-                {meta.name}
-              </h3>
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 text-xs font-medium mt-0.5",
-                  isConnected ? "text-semantic-success" : "text-ink-subtle"
-                )}
-              >
-                <span
-                  className={cn(
-                    "h-1.5 w-1.5 rounded-full",
-                    isConnected
-                      ? "bg-[#00ed64] animate-pulse"
-                      : "bg-slate-400"
-                  )}
-                />
-                {isConnected ? "Active Audit Mode" : "Not Connected"}
+              <h3 className="text-[15px] font-semibold text-ink">{meta.name}</h3>
+              <span className={cn("mt-0.5 inline-flex items-center gap-1.5 text-xs font-medium", isConnected ? "text-semantic-success" : "text-ink-subtle")}>
+                <span className={cn("h-1.5 w-1.5 rounded-full", isConnected ? "animate-pulse bg-[#00ed64]" : "bg-slate-400")} />
+                {isConnected ? (providerKey === "ANTHROPIC" ? "Monitoring" : "Active audit") : connectable ? "Not connected" : "Coming soon"}
               </span>
             </div>
           </div>
+          {report && <DataSourceBadge dataSource={report.dataSource} reason={report.simulationReason} />}
         </div>
 
-        {/* Description */}
-        <p className="mt-3.5 text-[13px] leading-relaxed text-ink-muted min-h-[38px] flex items-start">
-          {meta.description}
-        </p>
+        <p className="mt-3.5 flex min-h-[38px] items-start text-[13px] leading-relaxed text-ink-muted">{meta.description}</p>
 
-        {/* Permission badge */}
-        <div className="mt-3 min-h-[36px] flex items-center">
-          <span className="inline-flex items-center gap-1 rounded-md bg-surface-3 px-2 py-1 text-[11px] font-medium text-ink-subtle border border-hairline leading-normal">
-            <svg
-              className="h-3 w-3 text-ink-tertiary"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+        <div className="mt-3 flex min-h-[36px] items-center">
+          <span className="inline-flex items-center gap-1 rounded-md border border-hairline bg-surface-3 px-2 py-1 text-[11px] font-medium leading-normal text-ink-subtle">
+            <svg className="h-3 w-3 text-ink-tertiary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
@@ -296,224 +247,159 @@ export function IntegrationCard({
           </span>
         </div>
 
-        {/* Last audit info (when connected) */}
+        {/* Findings */}
         {isConnected && (
           <div className="mt-3">
-            {providerKey === "ANTHROPIC" ? (
-              <div className="rounded-lg bg-[#c3f0d2]/70 px-4 py-3.5 text-[11.5px] text-[#00684a] border border-[#00ed64]/20 shadow-sm leading-relaxed">
-                <span className="font-bold flex items-center gap-1.5 mb-1.5 text-[#00684a]">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00ed64] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00a35c]"></span>
-                  </span>
-                  Active Monitor Mode:
-                </span>
-                Auditing is fully active. Spent logs are evaluated every 15 minutes. Safety limit:{" "}
-                <span className="font-bold text-[#00684a]">${Number(integration?.refreshToken || 50.0).toFixed(2)} USD/mo</span>.
-                {integration?.wastedAmount !== null && (
-                  <span className="block mt-1">
-                    Current month spend: <span className="font-bold text-[#00684a]">${Number(integration.wastedAmount).toFixed(2)} USD</span>.
-                  </span>
-                )}
-              </div>
+            {tokenReport ? (
+              <TokenSummary report={tokenReport} onOpen={() => setIsDetailOpen(true)} />
+            ) : seatReport ? (
+              <SeatSummary report={seatReport} onOpen={() => setIsDetailOpen(true)} />
             ) : integration?.wastedSeats !== null && integration?.wastedSeats !== undefined ? (
-              <div className="space-y-2">
-                <div className="rounded-lg bg-[#c3f0d2] px-4 py-3.5 text-[11.5px] text-[#00684a] border border-[#00ed64]/20 shadow-sm leading-relaxed">
-                  <span className="font-bold flex items-center gap-1.5 mb-1.5 text-[#00684a]">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00a35c]"></span>
-                    </span>
-                    Audit complete:
-                  </span>
-                  {providerKey === "GITHUB_COPILOT" ? (
-                    <>
-                      {integration.wastedSeats} inactive developer seat{integration.wastedSeats === 1 ? "" : "s"} found. Saving you <span className="font-bold text-[#00684a]">${(integration.wastedAmount ?? 0).toLocaleString()}/mo</span>.
-                      <button
-                        onClick={() => setIsTelemetryOpen(true)}
-                        className="ml-1.5 inline-flex items-center gap-1 font-bold text-[#00684a] hover:text-[#00b545] underline cursor-pointer"
-                      >
-                        View Telemetry
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {integration.wastedSeats} inactive seat{integration.wastedSeats === 1 ? "" : "s"} found. Saving you{" "}
-                      <span className="font-bold text-[#00684a]">
-                        {integration.wastedAmount !== null && integration.wastedAmount > 0
-                          ? (integration.wastedAmount >= 1000 ? "₹" : "$") + integration.wastedAmount.toLocaleString()
-                          : (providerKey === "FIGMA" ? "₹4,800" : "$60")}
-                      </span>/mo.
-                    </>
-                  )}
-                </div>
-              </div>
-            ) : integration?.lastAuditAt ? (
-              <div className="rounded-lg bg-surface-3 border border-hairline px-4 py-3 text-[11px] text-ink-subtle leading-relaxed shadow-sm">
-                <span className="font-semibold text-ink-muted">Last audit:</span>{" "}
-                {new Date(integration.lastAuditAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+              <div className="rounded-lg border border-hairline bg-surface-3 px-4 py-3 text-[11.5px] leading-relaxed text-ink-muted shadow-sm">
+                <span className="font-semibold text-ink">Older audit:</span> {integration.wastedSeats} idle seat{integration.wastedSeats === 1 ? "" : "s"},{" "}
+                {formatMoney(integration.wastedAmount ?? 0, "USD")}/mo. Run the audit again for seat-level detail.
               </div>
             ) : (
-              <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-[11px] text-amber-600 leading-relaxed shadow-sm">
-                <span className="font-semibold">Pending:</span> First audit will run on the next scheduled cycle.
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[11px] leading-relaxed text-amber-700 shadow-sm">
+                <span className="font-semibold">Pending:</span> no audit yet. Click Run Audit or wait for the daily cycle.
+              </div>
+            )}
+            {integration?.lastAuditAt && (
+              <div className="mt-2 flex items-center gap-1 text-[10.5px] text-ink-tertiary">
+                <Clock className="h-3 w-3" /> Last audit {relativeTime(integration.lastAuditAt)}
               </div>
             )}
           </div>
         )}
 
-        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Action button */}
-        <div className="mt-5">
+        {notice && (
+          <div
+            className={cn(
+              "mt-4 rounded-md border px-3 py-2 text-[11px] font-medium leading-relaxed",
+              notice.type === "error"
+                ? "border-red-200 bg-red-50 text-red-700"
+                : notice.type === "success"
+                  ? "border-[#00ed64]/30 bg-[#e3fcef] text-[#00684a]"
+                  : "border-amber-200 bg-amber-50 text-amber-800"
+            )}
+          >
+            {notice.text}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="mt-4">
           {isConnected ? (
-            <>
-              {!showConfirm ? (
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <button
-                      id={`audit-${providerKey.toLowerCase()}`}
-                      onClick={handleRunAudit}
-                      disabled={isAuditing}
-                      className="flex-1 rounded-full h-10 px-5 text-[13px] font-semibold text-[#001e2b] bg-[#00ed64] hover:bg-[#00b545] shadow-sm transition-all duration-200 cursor-pointer text-center flex items-center justify-center gap-2 hover:shadow-md active:scale-[0.98] disabled:opacity-60"
-                    >
-                      {isAuditing ? (
-                        <>
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#001e2b] border-t-transparent" />
-                          Auditing...
-                        </>
-                      ) : (
-                        "Run Audit"
-                      )}
-                    </button>
-                    <button
-                      id={`disconnect-${providerKey.toLowerCase()}`}
-                      onClick={() => setShowConfirm(true)}
-                      disabled={isAuditing}
-                      className="rounded-full border border-slate-200 bg-slate-50 h-10 px-5 flex items-center justify-center text-[13px] font-medium text-slate-600 transition-all duration-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 disabled:opacity-40"
-                    >
-                      Disconnect
-                    </button>
-                  </div>
-                  {auditError && (
-                    <p className="text-[11px] text-red-600 font-medium text-center bg-red-50 py-1 rounded-md">
-                      ⚠️ {auditError}
-                    </p>
+            !showConfirm ? (
+              <div className="flex gap-2">
+                <button
+                  id={`audit-${providerKey.toLowerCase()}`}
+                  onClick={handleRunAudit}
+                  disabled={isAuditing}
+                  className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#00ed64] px-5 text-center text-[13px] font-semibold text-[#001e2b] shadow-sm transition-all duration-200 hover:bg-[#00b545] hover:shadow-md active:scale-[0.98] disabled:opacity-60"
+                >
+                  {isAuditing ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#001e2b] border-t-transparent" />
+                      {providerKey === "ANTHROPIC" ? "Syncing..." : "Auditing..."}
+                    </>
+                  ) : providerKey === "ANTHROPIC" ? (
+                    "Sync usage"
+                  ) : (
+                    "Run Audit"
                   )}
+                </button>
+                <button
+                  id={`disconnect-${providerKey.toLowerCase()}`}
+                  onClick={() => setShowConfirm(true)}
+                  disabled={isAuditing}
+                  className="flex h-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-5 text-[13px] font-medium text-slate-600 transition-all duration-200 hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                >
+                  Disconnect
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-center text-[12px] font-medium text-red-600">Remove this integration?</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowConfirm(false)}
+                    disabled={isPending}
+                    className="flex h-10 flex-1 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDisconnect}
+                    disabled={isPending}
+                    className="flex h-10 flex-1 items-center justify-center rounded-full bg-red-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+                  >
+                    {isPending ? "Removing…" : "Confirm"}
+                  </button>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-[12px] text-red-600 font-medium text-center">
-                    Remove this integration?
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setShowConfirm(false)}
-                      disabled={isPending}
-                      className="flex-1 rounded-full border border-slate-200 bg-white h-10 px-4 flex items-center justify-center text-[13px] font-medium text-slate-600 transition-colors hover:bg-slate-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleDisconnect}
-                      disabled={isPending}
-                      className="flex-1 rounded-full bg-red-600 h-10 px-4 flex items-center justify-center text-[13px] font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-60"
-                    >
-                      {isPending ? "Removing…" : "Confirm"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
+              </div>
+            )
+          ) : providerKey === "FIGMA" ? (
             <a
-              id={`connect-${providerKey.toLowerCase()}`}
-              href={
-                providerKey === "FIGMA"
-                  ? "/api/integrations/figma/connect"
-                  : undefined
-              }
-              onClick={
-                providerKey !== "FIGMA"
-                  ? (e) => {
-                      e.preventDefault();
-                      if (providerKey === "GITHUB_COPILOT") {
-                        setIsModalOpen(true);
-                        setModalError(null);
-                        setOrgSlug("");
-                        setGithubToken("");
-                      } else if (providerKey === "ANTHROPIC") {
-                        setIsModalOpen(true);
-                        setModalError(null);
-                        setApiKey("");
-                        setThreshold("50.00");
-                      } else {
-                        alert(
-                           `${meta.name} integration is coming soon. Figma is available now!`
-                        );
-                      }
-                    }
-                  : undefined
-              }
+              id="connect-figma"
+              href="/api/integrations/figma/connect"
               className={cn(
-                "flex w-full items-center justify-center rounded-full h-10 px-5 text-[13px] font-semibold text-white shadow-sm transition-all duration-200 cursor-pointer text-center",
-                "hover:shadow-md hover:brightness-110 active:scale-[0.98]",
+                "flex h-10 w-full cursor-pointer items-center justify-center rounded-full px-5 text-center text-[13px] font-semibold text-white shadow-sm transition-all duration-200 hover:shadow-md hover:brightness-110 active:scale-[0.98]",
                 meta.iconBg
               )}
             >
               Connect {meta.name}
             </a>
+          ) : connectable ? (
+            <button
+              id={`connect-${providerKey.toLowerCase()}`}
+              onClick={openConnect}
+              className={cn(
+                "flex h-10 w-full cursor-pointer items-center justify-center rounded-full px-5 text-center text-[13px] font-semibold text-white shadow-sm transition-all duration-200 hover:shadow-md hover:brightness-110 active:scale-[0.98]",
+                meta.iconBg
+              )}
+            >
+              Connect {meta.name}
+            </button>
+          ) : (
+            <button
+              id={`connect-${providerKey.toLowerCase()}`}
+              disabled
+              title="This connector is on the roadmap."
+              className="flex h-10 w-full cursor-not-allowed items-center justify-center rounded-full border border-dashed border-hairline-strong bg-surface-3 px-5 text-center text-[13px] font-semibold text-ink-subtle"
+            >
+              Coming soon
+            </button>
           )}
         </div>
-
       </div>
 
-      {/* Modal Dialog */}
-      {isModalOpen && mounted && createPortal(
-        providerKey === "ANTHROPIC" ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-              onClick={() => setIsModalOpen(false)}
-            />
-            
-            {/* Dialog Container */}
-            <div className="relative z-10 w-full max-w-md transform overflow-hidden rounded-lg border border-[#1c2d38] bg-[#001e2b] p-6 text-white shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200">
-              {/* Close button */}
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-[#003d4f]/30 hover:text-white transition-colors cursor-pointer"
-              >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
+      {/* Detail modals */}
+      {seatReport && (
+        <SeatAuditModal open={isDetailOpen} onClose={() => setIsDetailOpen(false)} report={seatReport} providerName={meta.name} icon={meta.icon} iconBg={meta.iconBg} />
+      )}
+      {tokenReport && <TokenSpendModal open={isDetailOpen} onClose={() => setIsDetailOpen(false)} report={tokenReport} icon={meta.icon} iconBg={meta.iconBg} />}
 
-              {/* Icon + Title */}
-              <div className="flex items-center gap-3">
-                <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg text-white shadow-sm", meta.iconBg)}>
-                  {meta.icon}
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white tracking-tight">
-                    Connect Anthropic Claude
-                  </h3>
-                  <p className="text-xs text-slate-400 font-medium">Configure token consumption safety limits</p>
-                </div>
-              </div>
-
+      {/* Connect modals */}
+      {isModalOpen &&
+        canPortal &&
+        createPortal(
+          providerKey === "ANTHROPIC" ? (
+            <ModalShell dark onClose={() => setIsModalOpen(false)}>
+              <ModalHeader
+                dark
+                icon={meta.icon}
+                iconBg={meta.iconBg}
+                title="Connect Anthropic Claude"
+                subtitle="Verify your key and set a monthly safety budget"
+              />
               <p className="mt-3 text-xs leading-relaxed text-slate-400">
-                Track real-time token consumption balances, monitor anomalous spikes, and prevent budget leaks.
+                SpendSync verifies the key against the Anthropic API without spending tokens. Live organization spend needs an{" "}
+                <span className="font-semibold text-slate-200">Admin API key</span> (starts with <code className="font-mono text-[11px]">sk-ant-admin</code>); a
+                standard key is verified but its telemetry is simulated.
               </p>
-
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
@@ -523,137 +409,82 @@ export function IntegrationCard({
                     const res = await connectAnthropic(apiKey, threshold);
                     if (res.success) {
                       setIsModalOpen(false);
+                      setNotice({ type: res.warning ? "info" : "success", text: res.warning ?? "Anthropic connected and first sync complete." });
                     } else {
                       setModalError(res.error || "Failed to save integration");
                     }
-                  } catch (err: any) {
-                    setModalError(err.message || "An unexpected error occurred");
+                  } catch (err) {
+                    setModalError(err instanceof Error ? err.message : "An unexpected error occurred");
                   } finally {
                     setIsSubmitting(false);
                   }
                 }}
                 className="mt-4 space-y-4 text-left"
               >
-                {/* API Key */}
                 <div className="space-y-1.5">
-                  <label htmlFor="modal-claude-api-key" className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                    <Key className="h-3.5 w-3.5 text-slate-400" />
-                    Anthropic API Key
+                  <label htmlFor="modal-claude-api-key" className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+                    <Key className="h-3.5 w-3.5 text-slate-400" /> Anthropic API key
                   </label>
                   <div className="relative">
                     <input
                       id="modal-claude-api-key"
                       type={showKey ? "text" : "password"}
                       required
-                      placeholder="sk-ant-api53-..."
+                      autoComplete="off"
+                      placeholder="sk-ant-admin01-..."
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
-                      className="w-full h-11 rounded-md border border-[#1c2d38] bg-[#003d4f]/20 px-3 pr-10 text-[13px] text-white placeholder-slate-500 focus:border-[#00ed64] focus:ring-1 focus:ring-[#00ed64] focus:outline-none transition-all font-mono"
+                      className="h-11 w-full rounded-md border border-[#1c2d38] bg-[#003d4f]/20 px-3 pr-10 font-mono text-[13px] text-white placeholder-slate-500 transition-all focus:border-[#00ed64] focus:outline-none focus:ring-1 focus:ring-[#00ed64]"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowKey(!showKey)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                    >
+                    <button type="button" onClick={() => setShowKey(!showKey)} className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 transition-colors hover:text-white" aria-label="Toggle key visibility">
                       {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  <button type="button" onClick={() => setApiKey(DEMO_ANTHROPIC_KEY)} className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[#00ed64]/80 hover:text-[#00ed64]">
+                    <Sparkles className="h-3 w-3" /> Use demo key (simulated telemetry)
+                  </button>
                 </div>
-
-                {/* Threshold */}
                 <div className="space-y-1.5">
-                  <label htmlFor="modal-claude-threshold" className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                    <ShieldAlert className="h-3.5 w-3.5 text-slate-400" />
-                    Monthly Burn Safety Threshold (USD)
+                  <label htmlFor="modal-claude-threshold" className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+                    <ShieldAlert className="h-3.5 w-3.5 text-slate-400" /> Monthly safety budget (USD)
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold select-none">
-                      $
-                    </span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 select-none text-sm font-semibold text-slate-400">$</span>
                     <input
                       id="modal-claude-threshold"
                       type="number"
                       step="0.01"
                       min="0.01"
                       required
-                      placeholder="50.00"
                       value={threshold}
                       onChange={(e) => setThreshold(e.target.value)}
-                      className="w-full h-11 rounded-md border border-[#1c2d38] bg-[#003d4f]/20 pl-7 pr-3 text-[13px] text-white placeholder-slate-500 focus:border-[#00ed64] focus:ring-1 focus:ring-[#00ed64] focus:outline-none transition-all font-semibold tabular-nums"
+                      className="h-11 w-full rounded-md border border-[#1c2d38] bg-[#003d4f]/20 pl-7 pr-3 text-[13px] font-semibold tabular-nums text-white placeholder-slate-500 transition-all focus:border-[#00ed64] focus:outline-none focus:ring-1 focus:ring-[#00ed64]"
                     />
                   </div>
-                  <p className="text-[10px] text-slate-400 leading-normal">
-                    We will alert you instantly if your workspace spend surpasses this custom dollar amount.
-                  </p>
+                  <p className="text-[10px] leading-normal text-slate-400">The workspace owner is emailed once per month when spend crosses this amount.</p>
                 </div>
-
-                {/* Error Display */}
                 {modalError && (
-                  <div className="flex items-start gap-2 rounded-md bg-red-950/40 border border-red-500/30 p-3 text-xs text-red-400 font-medium">
-                    <span className="shrink-0 mt-0.5">⚠️</span>
+                  <div className="flex items-start gap-2 rounded-md border border-red-500/30 bg-red-950/40 p-3 text-xs font-medium text-red-400">
+                    <span className="mt-0.5 shrink-0">⚠️</span>
                     <span>{modalError}</span>
                   </div>
                 )}
-
-                {/* Action Buttons */}
                 <div className="flex gap-2.5 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    disabled={isSubmitting}
-                    className="flex-1 rounded-full border border-[#1c2d38] bg-transparent h-10 px-4 flex items-center justify-center text-[13px] font-semibold text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-40"
-                  >
+                  <button type="button" onClick={() => setIsModalOpen(false)} disabled={isSubmitting} className="flex h-10 flex-1 items-center justify-center rounded-full border border-[#1c2d38] bg-transparent px-4 text-[13px] font-semibold text-slate-300 transition-colors hover:bg-slate-800 disabled:opacity-40">
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 rounded-full bg-[#00ed64] hover:bg-[#00b545] h-10 px-4 flex items-center justify-center text-[13px] font-semibold text-[#001e2b] shadow-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-60 cursor-pointer border border-transparent"
-                  >
-                    {isSubmitting ? "Connecting..." : "Connect Engine"}
+                  <button type="submit" disabled={isSubmitting} className="flex h-10 flex-1 cursor-pointer items-center justify-center rounded-full border border-transparent bg-[#00ed64] px-4 text-[13px] font-semibold text-[#001e2b] shadow-sm transition-all duration-200 hover:bg-[#00b545] active:scale-[0.98] disabled:opacity-60">
+                    {isSubmitting ? "Verifying key..." : "Verify & connect"}
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        ) : (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-              onClick={() => setIsModalOpen(false)}
-            />
-            
-            {/* Dialog Container */}
-            <div className="relative z-10 w-full max-w-md transform overflow-hidden rounded-lg border border-hairline bg-white p-6 shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200 text-ink">
-              {/* Close button */}
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="absolute right-4 top-4 rounded-lg p-1.5 text-ink-subtle hover:bg-slate-100 hover:text-ink transition-colors cursor-pointer"
-              >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-
-              {/* Icon + Title */}
-              <div className="flex items-center gap-3">
-                <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg text-white shadow-sm", meta.iconBg)}>
-                  {meta.icon}
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-ink">
-                    Connect GitHub Copilot
-                  </h3>
-                  <p className="text-xs text-[#5c6c7a] font-medium">Configure secure API access</p>
-                </div>
-              </div>
-
+            </ModalShell>
+          ) : (
+            <ModalShell onClose={() => setIsModalOpen(false)}>
+              <ModalHeader icon={meta.icon} iconBg={meta.iconBg} title="Connect GitHub Copilot" subtitle="Verified live against the GitHub API" />
               <p className="mt-3 text-xs leading-relaxed text-slate-500">
-                Audit Copilot seat assignments and automatically flag inactive developers across your organization.
+                SpendSync reads your Copilot seat list and billing summary to find developers with no IDE activity in 30 days. The token is checked before anything is saved.
               </p>
-
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
@@ -663,440 +494,164 @@ export function IntegrationCard({
                     const res = await connectGithubCopilot(orgSlug, githubToken);
                     if (res.success) {
                       setIsModalOpen(false);
+                      setNotice({ type: res.warning ? "info" : "success", text: res.warning ?? "GitHub Copilot connected and first audit complete." });
                     } else {
                       setModalError(res.error || "Failed to save integration");
                     }
-                  } catch (err: any) {
-                    setModalError(err.message || "An unexpected error occurred");
+                  } catch (err) {
+                    setModalError(err instanceof Error ? err.message : "An unexpected error occurred");
                   } finally {
                     setIsSubmitting(false);
                   }
                 }}
                 className="mt-4 space-y-4"
               >
-                {/* Org Slug input */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-ink block">
-                    GitHub Organization Slug
-                  </label>
+                  <label className="block text-xs font-semibold text-ink">GitHub organization slug</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g., althaf-consulting-labs"
+                    placeholder="e.g. acme-labs"
                     value={orgSlug}
                     onChange={(e) => setOrgSlug(e.target.value)}
-                    className="w-full rounded-md border border-hairline-strong bg-white px-3 py-2.5 text-[13px] text-ink placeholder-ink-tertiary focus:border-[#00684a] focus:ring-[#00684a] focus:outline-none transition-all"
+                    className="w-full rounded-md border border-hairline-strong bg-white px-3 py-2.5 text-[13px] text-ink placeholder-ink-tertiary transition-all focus:border-[#00684a] focus:outline-none focus:ring-[#00684a]"
                   />
-                  <p className="text-[11px] text-ink-tertiary">
-                    Enter your exact GitHub Organization URL slug.
-                  </p>
+                  <p className="text-[11px] text-ink-tertiary">The name after github.com/ in your organization URL.</p>
                 </div>
-
-                {/* Secure PAT input */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-ink block">
-                    Fine-Grained Personal Access Token (PAT)
-                  </label>
+                  <label className="block text-xs font-semibold text-ink">Fine-grained personal access token</label>
                   <input
                     type="password"
                     required
-                    placeholder="ghp_... or github_pat_..."
+                    autoComplete="off"
+                    placeholder="github_pat_..."
                     value={githubToken}
                     onChange={(e) => setGithubToken(e.target.value)}
-                    className="w-full rounded-md border border-hairline-strong bg-white px-3 py-2.5 text-[13px] text-ink placeholder-ink-tertiary focus:border-[#00684a] focus:ring-[#00684a] focus:outline-none transition-all"
+                    className="w-full rounded-md border border-hairline-strong bg-white px-3 py-2.5 text-[13px] text-ink placeholder-ink-tertiary transition-all focus:border-[#00684a] focus:outline-none focus:ring-[#00684a]"
                   />
-                  <p className="text-[11px] text-ink-tertiary leading-normal">
-                    Create a PAT with read organization billing scopes on{" "}
-                    <a
-                      href="https://github.com/settings/tokens"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#00684a] hover:text-[#00ed64] hover:underline inline-flex items-center gap-0.5"
-                    >
-                      github.com/settings/tokens
-                      <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                        <polyline points="15 3 21 3 21 9" />
-                        <line x1="10" y1="14" x2="21" y2="3" />
-                      </svg>
-                    </a>
-                    . Ensure organization permission is selected.
+                  <p className="text-[11px] leading-normal text-ink-tertiary">
+                    Create one at{" "}
+                    <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer" className="text-[#00684a] hover:underline">
+                      github.com/settings/personal-access-tokens
+                    </a>{" "}
+                    with the organization permission <span className="font-semibold">GitHub Copilot Business: read</span>. Org owner access is required.
                   </p>
-                </div>
-
-                {/* Error Display */}
-                {modalError && (
-                  <div className="rounded-md bg-red-50 border border-red-200 p-2.5 text-xs text-red-600 font-medium leading-relaxed">
-                    ⚠️ {modalError}
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-2.5 pt-2">
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    disabled={isSubmitting}
-                    className="flex-1 rounded-full border border-hairline-strong bg-white h-10 px-4 flex items-center justify-center text-[13px] font-semibold text-ink hover:bg-slate-100 transition-colors disabled:opacity-40"
+                    onClick={() => {
+                      setOrgSlug(DEMO_GITHUB.org);
+                      setGithubToken(DEMO_GITHUB.token);
+                    }}
+                    className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[#00684a] hover:underline"
                   >
+                    <Sparkles className="h-3 w-3" /> Use demo credentials (simulated seats)
+                  </button>
+                </div>
+                {modalError && <div className="rounded-md border border-red-200 bg-red-50 p-2.5 text-xs font-medium leading-relaxed text-red-600">⚠️ {modalError}</div>}
+                <div className="flex gap-2.5 pt-2">
+                  <button type="button" onClick={() => setIsModalOpen(false)} disabled={isSubmitting} className="flex h-10 flex-1 items-center justify-center rounded-full border border-hairline-strong bg-white px-4 text-[13px] font-semibold text-ink transition-colors hover:bg-slate-100 disabled:opacity-40">
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 rounded-full bg-[#00ed64] hover:bg-[#00b545] h-10 px-4 flex items-center justify-center text-[13px] font-semibold text-[#001e2b] shadow-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-60 cursor-pointer border border-transparent"
-                  >
-                    {isSubmitting ? "Connecting..." : "Verify & Activate"}
+                  <button type="submit" disabled={isSubmitting} className="flex h-10 flex-1 cursor-pointer items-center justify-center rounded-full border border-transparent bg-[#00ed64] px-4 text-[13px] font-semibold text-[#001e2b] shadow-sm transition-all duration-200 hover:bg-[#00b545] active:scale-[0.98] disabled:opacity-60">
+                    {isSubmitting ? "Verifying token..." : "Verify & connect"}
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        ),
-        document.body
-      )}
-
-      {/* Telemetry Analytics Modal */}
-      {isTelemetryOpen && mounted && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-            onClick={() => setIsTelemetryOpen(false)}
-          />
-          
-          {/* Dialog Container */}
-          <div className="relative z-10 w-full max-w-lg max-h-[90vh] flex flex-col transform overflow-hidden rounded-2xl border border-hairline bg-surface-1 p-6 shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200 text-ink">
-            {/* Close button */}
-            <button
-              onClick={() => setIsTelemetryOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-1.5 text-ink-subtle hover:bg-surface-2 hover:text-ink transition-colors cursor-pointer"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-
-            {/* Icon + Title */}
-            <div className="flex items-center gap-3 mb-4 flex-shrink-0">
-              <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm", meta.iconBg)}>
-                {meta.icon}
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-ink">
-                  {providerKey === "GITHUB_COPILOT" ? "Copilot Seat & Token Telemetry" : "Copilot Telemetry Analytics"}
-                </h3>
-                <p className="text-xs text-ink-subtle font-medium">
-                  {providerKey === "GITHUB_COPILOT" ? "Real-time individual assignment tracking" : "Fine-grained token activity & workloads"}
-                </p>
-              </div>
-            </div>
-
-            {/* Scrollable Content Container */}
-            <div className="flex-1 overflow-y-auto pr-1.5 space-y-4 min-h-0 scrollbar-thin">
-              {/* Highlights Grid */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-canvas border border-hairline rounded-xl p-3">
-                  <span className="text-[9px] font-bold text-ink-subtle block mb-0.5 uppercase tracking-wider">AI Workload</span>
-                  <span className="text-base font-extrabold text-ink tabular-nums">
-                    {providerKey === "GITHUB_COPILOT" ? "985k" : `${(totalTokens / 1000).toFixed(0)}k`} <span className="text-[10px] text-ink-tertiary font-normal">tkn</span>
-                  </span>
-                </div>
-                <div className="bg-canvas border border-hairline rounded-xl p-3">
-                  <span className="text-[9px] font-bold text-ink-subtle block mb-0.5 uppercase tracking-wider">LLM Engines</span>
-                  <span className="text-base font-extrabold text-ink">
-                    {providerKey === "GITHUB_COPILOT" ? "2" : uniqueModels} <span className="text-[10px] text-ink-tertiary font-normal">active</span>
-                  </span>
-                </div>
-                <div className="bg-canvas border border-hairline rounded-xl p-3">
-                  <span className="text-[9px] font-bold text-ink-subtle block mb-0.5 uppercase tracking-wider">SaaS Leak</span>
-                  <span className="text-base font-extrabold text-destructive tabular-nums">
-                    {providerKey === "GITHUB_COPILOT" ? "$19.00" : `$${totalLeak.toFixed(2)}`}<span className="text-[10px] text-destructive/80 font-normal">/mo</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Pooled AI Capacity Status Banner */}
-              {providerKey === "GITHUB_COPILOT" && (
-                <div className="flex items-center justify-between rounded-xl bg-canvas border border-hairline px-4 py-3 text-[11px] font-semibold text-ink shadow-md">
-                  <div className="flex items-center gap-2">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-450"></span>
-                    </span>
-                    <span>Pooled AI Credit Capacity:</span>
-                  </div>
-                  <span className="text-primary font-bold tabular-nums whitespace-nowrap">
-                    ${((integration?.wastedSeats ?? 0) * 19).toFixed(2)} Stranded
-                  </span>
-                </div>
-              )}
-
-              {/* Copilot Optimization Policy */}
-              {providerKey === "GITHUB_COPILOT" && (
-                <div className="rounded-xl border border-hairline bg-canvas/40 p-3.5 text-xs text-ink-muted shadow-sm">
-                  <h4 className="font-bold text-ink mb-2.5 flex items-center gap-1.5">
-                    <svg className="h-3.5 w-3.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="16" x2="12" y2="12" />
-                      <line x1="12" y1="8" x2="12.01" y2="8" />
-                    </svg>
-                    Copilot Optimization Policy
-                  </h4>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-[11px] leading-relaxed">
-                    <div>
-                      <span className="text-ink-subtle block font-medium">Idle Threshold</span>
-                      <span className="font-semibold text-ink-muted">30 Days (No activity)</span>
-                    </div>
-                    <div>
-                      <span className="text-ink-subtle block font-medium">Telemetry Resolution</span>
-                      <span className="font-semibold text-ink-muted">Hourly API Sync</span>
-                    </div>
-                    <div>
-                      <span className="text-ink-subtle block font-medium">Public Code Filter</span>
-                      <span className="font-semibold text-amber-500">Blocked (Enforced)</span>
-                    </div>
-                    <div>
-                      <span className="text-ink-subtle block font-medium">Allowed LLMs</span>
-                      <span className="font-semibold text-ink-muted">GPT-4o, Claude 3.5, Llama 3.1</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* List Container */}
-              <div className="space-y-3">
-                {providerKey === "GITHUB_COPILOT" && report && !Array.isArray(report) ? (
-                  report.individualSeats?.map((item: any, idx: number) => {
-                    const isActive = item.status === "ACTIVE";
-                    const username = item.username || "unknown-dev";
-                    const avatarInitials = username.slice(0, 2).toUpperCase();
-
-                    // Format lastActivityAt to a clean readable string
-                    let activityStr = "Never active";
-                    if (item.lastActivityAt) {
-                      try {
-                        activityStr = `Active ${new Date(item.lastActivityAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit"
-                        })}`;
-                      } catch (e) {
-                        activityStr = `Active ${item.lastActivityAt}`;
-                      }
-                    }
-
-                    return (
-                      <div
-                        key={idx}
-                        className={cn(
-                          "relative overflow-hidden rounded-xl border p-3.5 transition-all duration-300",
-                          !isActive
-                            ? "bg-rose-50/20 border-rose-100/70"
-                            : "bg-white border-slate-100 hover:border-indigo-100 hover:shadow-sm"
-                        )}
-                      >
-                        {/* Top Row: User/Model & Leak */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2.5">
-                            {/* Initials Badge */}
-                            <div className={cn(
-                              "flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold border",
-                              !isActive
-                                ? "bg-rose-50 text-rose-600 border-rose-100"
-                                : "bg-indigo-50 text-indigo-650 border-indigo-100"
-                            )}>
-                              {avatarInitials}
-                            </div>
-                            <div>
-                              <div className="font-bold text-[12px] text-slate-800 flex items-center gap-2">
-                                {username}
-                                {!isActive ? (
-                                  <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-650 ring-1 ring-inset ring-rose-500/10 animate-pulse">
-                                    <span className="mr-1 h-1 w-1 rounded-full bg-rose-500" />
-                                    ⚠️ Idle License: Wasting $19.00/mo
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-[9px] font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-550/10">
-                                    {item.primaryModel}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
-                                <span>{activityStr}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Financial Leak / Status */}
-                          <div className="text-right">
-                            <span className="text-[9px] font-semibold tracking-wide text-slate-450 block uppercase">
-                              {!isActive ? "Financial Leak" : "Seat Status"}
-                            </span>
-                            <span className={cn(
-                              "text-[12px] font-bold tabular-nums",
-                              !isActive ? "text-rose-655 font-extrabold" : "text-emerald-600"
-                            )}>
-                              {!isActive ? "$19.00" : "Active"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  // Fallback for array-based reports (legacy GITHUB_COPILOT or FIGMA)
-                  Array.isArray(report) && report.map((item, idx) => {
-                    const isWasting = item.status === "ABSOLUTE_LEAK" || (item.inputTokens === 0 && item.outputTokens === 0) || (item.creditsConsumed === 0 && item.assignedSeats > 0);
-                    const ratioPct = item.creditsAllocated > 0 ? ((item.creditsConsumed ?? 0) / item.creditsAllocated) * 100 : 0;
-                    
-                    const teamName = item.teamName || item.developer || "Unknown Team";
-                    const primaryModel = item.primaryModel || item.model || "None";
-                    const creditsConsumed = item.creditsConsumed ?? item.creditsSpent ?? 0;
-                    const creditsAllocated = item.creditsAllocated ?? 19.00;
-                    const assignedSeats = item.assignedSeats ?? 1;
-
-                    const totalTkn = (item.inputTokens ?? 0) + (item.outputTokens ?? 0);
-                    const inputPct = totalTkn > 0 ? ((item.inputTokens ?? 0) / totalTkn) * 100 : 0;
-
-                    return (
-                      <div
-                        key={idx}
-                        className={cn(
-                          "relative overflow-hidden rounded-xl border p-3.5 transition-all duration-300",
-                          isWasting
-                            ? "bg-rose-50/20 border-rose-100/70"
-                            : "bg-white border-slate-100 hover:border-indigo-100 hover:shadow-sm"
-                        )}
-                      >
-                        {/* Top Row: User/Model & Leak */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2.5">
-                            {/* Initials Badge */}
-                            <div className={cn(
-                              "flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold border",
-                              isWasting
-                                ? "bg-rose-50 text-rose-600 border-rose-100"
-                                : "bg-indigo-50 text-indigo-650 border-indigo-100"
-                            )}>
-                              {teamName.slice(0, 2).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="font-bold text-[12px] text-slate-800 flex items-center gap-2">
-                                {teamName}
-                                {isWasting && (
-                                  <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-650 ring-1 ring-inset ring-rose-500/10 animate-pulse">
-                                    <span className="mr-1 h-1 w-1 rounded-full bg-rose-500" />
-                                    Wasting $19/mo
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[10px] text-slate-450 flex items-center gap-1 mt-0.5">
-                                <span className="text-slate-455">LLM Model:</span>
-                                <span className={cn(
-                                  "font-mono rounded px-1 py-0.2 text-[9px]",
-                                  isWasting ? "bg-slate-100 text-slate-450" : "bg-indigo-50 text-indigo-500 font-semibold"
-                                )}>
-                                  {primaryModel}
-                                </span>
-                                {assignedSeats > 1 && (
-                                  <>
-                                    <span className="mx-1.5 text-slate-300">•</span>
-                                    <span>Seats: {assignedSeats}</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Financial leak */}
-                          <div className="text-right">
-                            <span className="text-[9px] font-semibold tracking-wide text-slate-455 block uppercase">
-                              {isWasting ? "Financial Leak" : "Credits Consumed"}
-                            </span>
-                            <span className={cn(
-                              "text-[12px] font-bold tabular-nums",
-                              isWasting ? "text-rose-650 font-extrabold" : "text-slate-700"
-                            )}>
-                              {isWasting ? `$${(assignedSeats * 19).toFixed(2)}` : `$${creditsConsumed.toFixed(2)}`}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Bottom Row: Distribution / Progress bar */}
-                        {!isWasting && (
-                          <div className="mt-3 pt-2.5 border-t border-slate-100/60">
-                            {item.creditsAllocated !== undefined ? (
-                              <>
-                                <div className="flex items-center justify-between text-[9px] text-slate-450 mb-1">
-                                  <span className="font-semibold text-slate-400">Credit Pool Utilization ({ratioPct.toFixed(0)}%)</span>
-                                  <span className="tabular-nums font-medium text-slate-500">
-                                    Consumed: ${creditsConsumed.toFixed(2)} / ${creditsAllocated.toFixed(2)} Allocated
-                                  </span>
-                                </div>
-                                {/* Progress bar */}
-                                <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden flex">
-                                  <div
-                                    style={{ width: `${ratioPct}%` }}
-                                    className={cn(
-                                      "h-full transition-all duration-300",
-                                      item.status === "UNDER_UTILIZED" ? "bg-amber-500" : "bg-emerald-500"
-                                    )}
-                                    title={`Consumed: ${ratioPct.toFixed(1)}%`}
-                                  />
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <div className="flex items-center justify-between text-[9px] text-slate-450 mb-1">
-                                  <span className="font-semibold text-slate-400">Workload Distribution</span>
-                                  <span className="tabular-nums font-medium text-slate-500">
-                                    In: {(item.inputTokens ?? 0).toLocaleString()} | Out: {(item.outputTokens ?? 0).toLocaleString()}
-                                  </span>
-                                </div>
-                                {/* Stacked bar */}
-                                <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden flex">
-                                  <div
-                                    style={{ width: `${inputPct}%` }}
-                                    className="bg-indigo-500 h-full transition-all duration-300"
-                                    title={`Input: ${inputPct.toFixed(0)}%`}
-                                  />
-                                  <div
-                                    style={{ width: `${100 - inputPct}%` }}
-                                    className="bg-purple-455 h-full transition-all duration-300"
-                                    title={`Output: ${(100 - inputPct).toFixed(0)}%`}
-                                  />
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* Bottom bar */}
-            <div className="flex justify-end pt-4 mt-4 border-t border-hairline flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsTelemetryOpen(false)}
-                className="rounded-lg bg-primary hover:bg-primary-hover px-4 py-2 text-[12px] font-bold text-white shadow-sm transition-all cursor-pointer border border-transparent"
-              >
-                Close Analytics
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+            </ModalShell>
+          ),
+          document.body
+        )}
     </div>
   );
 }
 
-/** Export the list of provider keys for the page to iterate over */
-export const PROVIDER_KEYS = Object.keys(PROVIDERS);
+// ─────────────────────────────────────────────────────────
+// Summaries shown on the card
+// ─────────────────────────────────────────────────────────
+
+function SeatSummary({ report, onOpen }: { report: ReturnType<typeof parseAuditReport> & { kind: "SEATS" }; onOpen: () => void }) {
+  const leak = report.idleSeats * report.seatUnitPrice;
+  const hasLeak = leak > 0;
+  return (
+    <div className={cn("rounded-lg border px-4 py-3.5 text-[11.5px] leading-relaxed shadow-sm", hasLeak ? "border-rose-200 bg-rose-50/70 text-rose-800" : "border-[#00ed64]/20 bg-[#c3f0d2]/70 text-[#00684a]")}>
+      <span className="mb-1.5 flex items-center gap-1.5 font-bold">
+        <Users className="h-3.5 w-3.5" />
+        {hasLeak ? "Idle seats found" : "No idle seats"}
+      </span>
+      <span className="font-semibold">{report.idleSeats}</span> of <span className="font-semibold">{report.billedSeats}</span> billed seats inactive for {report.idleThresholdDays}+ days.
+      {hasLeak && (
+        <>
+          {" "}
+          Recoverable: <span className="font-bold">{formatMoney(leak, report.currency)}/mo</span>.
+        </>
+      )}
+      <button onClick={onOpen} className="ml-1.5 inline-flex cursor-pointer items-center gap-1 font-bold underline hover:opacity-80">
+        View seats
+      </button>
+    </div>
+  );
+}
+
+function TokenSummary({ report, onOpen }: { report: ReturnType<typeof parseAuditReport> & { kind: "TOKENS" }; onOpen: () => void }) {
+  const pct = Math.round((report.totalCostUsd / Math.max(report.thresholdUsd, 0.01)) * 100);
+  const tone = budgetTone(pct);
+  return (
+    <div className="rounded-lg border border-hairline bg-surface-3/70 px-4 py-3.5 text-[11.5px] leading-relaxed text-ink-muted shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex items-center gap-1.5 font-bold text-ink">
+          <Gauge className="h-3.5 w-3.5 text-[#00684a]" /> Month-to-date spend
+        </span>
+        <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold", tone.soft)}>{pct}% of budget</span>
+      </div>
+      <div className="mt-1.5 flex items-baseline gap-1.5">
+        <span className={cn("text-lg font-extrabold tabular-nums", tone.text)}>{formatMoney(report.totalCostUsd, "USD")}</span>
+        <span className="text-[11px] text-ink-subtle">of {formatMoney(report.thresholdUsd, "USD")} budget</span>
+      </div>
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+        <div className={cn("h-full rounded-full", tone.bar)} style={{ width: `${Math.min(100, pct)}%` }} />
+      </div>
+      <button onClick={onOpen} className="mt-2 inline-flex cursor-pointer items-center gap-1 font-bold text-[#00684a] underline hover:opacity-80">
+        View usage by model
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// Modal chrome
+// ─────────────────────────────────────────────────────────
+
+function ModalShell({ children, onClose, dark = false }: { children: React.ReactNode; onClose: () => void; dark?: boolean }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div
+        className={cn(
+          "relative z-10 w-full max-w-md transform overflow-hidden rounded-lg border p-6 shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200",
+          dark ? "border-[#1c2d38] bg-[#001e2b] text-white" : "border-hairline bg-white text-ink"
+        )}
+      >
+        <button
+          onClick={onClose}
+          className={cn("absolute right-4 top-4 cursor-pointer rounded-lg p-1.5 transition-colors", dark ? "text-slate-400 hover:bg-[#003d4f]/30 hover:text-white" : "text-ink-subtle hover:bg-slate-100 hover:text-ink")}
+          aria-label="Close"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ModalHeader({ icon, iconBg, title, subtitle, dark = false }: { icon: React.ReactNode; iconBg: string; title: string; subtitle: string; dark?: boolean }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg text-white shadow-sm", iconBg)}>{icon}</div>
+      <div>
+        <h3 className={cn("text-lg font-bold tracking-tight", dark ? "text-white" : "text-ink")}>{title}</h3>
+        <p className={cn("text-xs font-medium", dark ? "text-slate-400" : "text-[#5c6c7a]")}>{subtitle}</p>
+      </div>
+    </div>
+  );
+}

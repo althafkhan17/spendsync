@@ -351,11 +351,11 @@ export async function POST(request: NextRequest) {
                 },
               },
               required: ["vendorName", "primaryBilledSeats", "seatUnitPrice", "currency", "confidence"],
-            } as any,
+            } as unknown as NonNullable<Parameters<typeof genAI.getGenerativeModel>[0]["generationConfig"]>["responseSchema"],
           },
         });
 
-        let response: any;
+        let response: Awaited<ReturnType<typeof geminiModel.generateContent>> | undefined;
         let attempts = 0;
         const maxAttempts = 3;
 

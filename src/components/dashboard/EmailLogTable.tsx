@@ -13,10 +13,7 @@ import { cn } from "@/lib/utils";
 import { Mail } from "lucide-react";
 import type { EmailLogRow } from "@/app/actions/emails";
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
+import { formatMoney } from "@/lib/format";
 
 function formatDate(date: Date) {
   return new Date(date).toLocaleDateString("en-US", {
@@ -169,7 +166,7 @@ export function EmailLogTable({ logs }: EmailLogTableProps) {
                           {log.merchantName}
                         </span>
                         <span className="text-xs font-semibold text-semantic-success tabular-nums">
-                          {log.amount != null ? currencyFormatter.format(Number(log.amount)) : ""}
+                          {log.amount != null ? formatMoney(Number(log.amount), log.currency) : ""}
                         </span>
                       </div>
                     ) : (

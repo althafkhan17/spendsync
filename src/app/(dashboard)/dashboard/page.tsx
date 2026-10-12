@@ -1,108 +1,109 @@
 import React from "react";
 import { currentUser } from "@clerk/nextjs/server";
-import { Flame, CreditCard, CalendarClock } from "lucide-react";
+import { Flame, CreditCard, CalendarClock, ShieldAlert } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { SubscriptionTable } from "@/components/dashboard/SubscriptionTable";
 import { AddSubscriptionModal } from "@/components/dashboard/AddSubscriptionModal";
+import { RenewalRadar } from "@/components/dashboard/RenewalRadar";
+import { LeakWatch } from "@/components/dashboard/LeakWatch";
 import { getSubscriptions } from "@/app/actions/subscriptions";
+import { getIntegrations } from "@/app/actions/integrations";
 import { calculateDashboardMetrics } from "@/lib/analytics";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
+import { parseAuditReport, isSeatReport } from "@/lib/audit-report";
+import { formatMoney } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  try {
-    const user = await currentUser();
-    const firstName = user?.firstName || "there";
+  const user = await currentUser();
+  const firstName = user?.firstName || "there";
 
-    // Fetch real data from the database
-    const subscriptions = await getSubscriptions();
+  const [subscriptions, integrations] = await Promise.all([getSubscriptions(), getIntegrations()]);
+  const metrics = calculateDashboardMetrics(subscriptions);
 
-    // Compute metrics from the active subscriptions list
-    const metrics = calculateDashboardMetrics(subscriptions);
-
-    return (
-      <>
-        {/* Header */}
-        <div id="dashboard-header" className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-              Welcome back,{" "}
-              <span className="text-ink">{firstName}</span>
-            </h1>
-            <p className="mt-1.5 text-[15px] text-ink-subtle">
-              Here&apos;s an overview of your SaaS spend this month.
-            </p>
-          </div>
-          <AddSubscriptionModal />
-        </div>
-
-        {/* KPI Metrics — driven by real data */}
-        <div
-          id="kpi-metrics"
-          className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          <MetricCard
-            id="metric-monthly-burn"
-            title="Total Monthly Burn"
-            value={currencyFormatter.format(metrics.totalMonthlyBurn)}
-            subtitle="Across all active plans"
-            icon={Flame}
-            accentColor="from-orange-500 to-rose-500"
-          />
-          <MetricCard
-            id="metric-active-subscriptions"
-            title="Active Subscriptions"
-            value={String(metrics.activeCount)}
-            subtitle={
-              metrics.activeCount === 0
-                ? "Add your first subscription"
-                : `${metrics.activeCount} tracked service${metrics.activeCount !== 1 ? "s" : ""}`
-            }
-            icon={CreditCard}
-            accentColor="from-violet-600 to-indigo-600"
-          />
-          <MetricCard
-            id="metric-upcoming-renewals"
-            title="Upcoming Renewals"
-            value={String(metrics.upcomingRenewalsCount)}
-            subtitle="Within the next 30 days"
-            icon={CalendarClock}
-            accentColor="from-sky-500 to-cyan-500"
-          />
-        </div>
-
-        {/* Subscriptions Table — real data */}
-        <SubscriptionTable subscriptions={subscriptions} />
-      </>
-    );
-  } catch (error) {
-    // Rethrow internal Next.js dynamic server rendering errors so Next.js can handle them
-    if (
-      error instanceof Error &&
-      (error.message.includes("Dynamic server usage") ||
-        (error as any).digest === "DYNAMIC_SERVER_USAGE")
-    ) {
-      throw error;
+  // Seat leaks across connected integrations, grouped by currency.
+  const leakByCurrency: Record<string, number> = {};
+  let leakIntegrations = 0;
+  for (const i of integrations) {
+    if (!i.isActive) continue;
+    const report = parseAuditReport(i.tokenUsageReport);
+    if (isSeatReport(report)) {
+      const leak = report.idleSeats * report.seatUnitPrice;
+      if (leak > 0) {
+        leakByCurrency[report.currency] = (leakByCurrency[report.currency] ?? 0) + leak;
+        leakIntegrations++;
+      }
+    } else if (i.provider !== "ANTHROPIC" && i.wastedAmount && i.wastedAmount > 0) {
+      leakByCurrency.USD = (leakByCurrency.USD ?? 0) + i.wastedAmount;
+      leakIntegrations++;
     }
-
-    console.error("❌ Failed to load dashboard data:", error);
-    return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center rounded-xl border border-slate-200/60 bg-white p-8 text-center shadow-sm">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 text-rose-500 mb-4 font-bold">
-          ⚠️
-        </div>
-        <h3 className="text-base font-semibold text-slate-900">
-          Unable to load dashboard data
-        </h3>
-        <p className="mt-1 text-sm text-slate-500">
-          There was an error communicating with the database. Please try reloading the page.
-        </p>
-      </div>
-    );
   }
+  const leakEntries = Object.entries(leakByCurrency).sort((a, b) => b[1] - a[1]);
+  const leakValue = leakEntries.length ? formatMoney(leakEntries[0][1], leakEntries[0][0]) : formatMoney(0, metrics.primaryCurrency);
+  const leakSubtitle =
+    leakEntries.length === 0
+      ? integrations.some((i) => i.isActive)
+        ? "No idle seats detected"
+        : "Connect an integration to detect leaks"
+      : leakEntries.length > 1
+        ? `+ ${leakEntries.slice(1).map(([c, v]) => formatMoney(v, c)).join(", ")} · ${leakIntegrations} integration${leakIntegrations === 1 ? "" : "s"}`
+        : `Idle seats across ${leakIntegrations} integration${leakIntegrations === 1 ? "" : "s"}`;
+
+  const otherBurn = Object.entries(metrics.burnByCurrency).filter(([c]) => c !== metrics.primaryCurrency);
+  const burnSubtitle =
+    otherBurn.length > 0
+      ? `+ ${otherBurn.map(([c, v]) => formatMoney(v, c)).join(", ")} in other currencies`
+      : "Across all active plans";
+
+  return (
+    <>
+      <div id="dashboard-header" className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+            Welcome back, <span className="text-ink">{firstName}</span>
+          </h1>
+          <p className="mt-1.5 text-[15px] text-ink-subtle">Here&apos;s an overview of your SaaS spend this month.</p>
+        </div>
+        <AddSubscriptionModal />
+      </div>
+
+      <div id="kpi-metrics" className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          id="metric-monthly-burn"
+          title="Total Monthly Burn"
+          value={formatMoney(metrics.totalMonthlyBurn, metrics.primaryCurrency)}
+          subtitle={burnSubtitle}
+          icon={Flame}
+        />
+        <MetricCard
+          id="metric-active-subscriptions"
+          title="Active Subscriptions"
+          value={String(metrics.activeCount)}
+          subtitle={
+            metrics.activeCount === 0
+              ? "Add your first subscription"
+              : metrics.needsReviewCount > 0
+                ? `${metrics.needsReviewCount} need${metrics.needsReviewCount === 1 ? "s" : ""} review`
+                : `${metrics.activeCount} tracked service${metrics.activeCount !== 1 ? "s" : ""}`
+          }
+          icon={CreditCard}
+        />
+        <MetricCard
+          id="metric-upcoming-renewals"
+          title="Upcoming Renewals"
+          value={String(metrics.upcomingRenewalsCount)}
+          subtitle="Within the next 30 days"
+          icon={CalendarClock}
+        />
+        <MetricCard id="metric-detected-leaks" title="Detected Leaks" value={leakValue} subtitle={leakSubtitle} icon={ShieldAlert} />
+      </div>
+
+      <div className="mb-8 grid gap-4 lg:grid-cols-2">
+        <RenewalRadar subscriptions={subscriptions} />
+        <LeakWatch integrations={integrations} />
+      </div>
+
+      <SubscriptionTable subscriptions={subscriptions} />
+    </>
+  );
 }

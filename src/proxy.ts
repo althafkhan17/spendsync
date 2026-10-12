@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// All app routes are protected — unauthenticated users are redirected to sign-in.
+// Next 16 "proxy" (formerly middleware). All app routes are protected — unauthenticated users are redirected to sign-in.
 // Add any future public routes (landing page, marketing, etc.) to this matcher
 // to exclude them from protection.
 const isPublicRoute = createRouteMatcher([

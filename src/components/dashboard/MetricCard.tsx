@@ -10,7 +10,6 @@ interface MetricCardProps {
   subtitle?: string;
   icon: LucideIcon;
   trend?: { value: string; positive: boolean };
-  accentColor?: string;
 }
 
 export function MetricCard({
@@ -20,7 +19,6 @@ export function MetricCard({
   subtitle,
   icon: Icon,
   trend,
-  accentColor = "from-slate-900 to-slate-700",
 }: MetricCardProps) {
   return (
     <Card

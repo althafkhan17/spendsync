@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -11,23 +11,16 @@ import { cn } from "@/lib/utils";
  */
 export function OAuthStatusBanner() {
   const searchParams = useSearchParams();
-  const [visible, setVisible] = useState(false);
-  const [status, setStatus] = useState<{
-    type: "success" | "error";
-    message: string;
-  } | null>(null);
-
-  useEffect(() => {
+  const status = useMemo<{ type: "success" | "error"; message: string } | null>(() => {
     const success = searchParams.get("success");
     const error = searchParams.get("error");
-
     if (success) {
-      setStatus({
+      return {
         type: "success",
         message: `${success.charAt(0).toUpperCase() + success.slice(1)} connected successfully! The first audit will run on the next scheduled cycle.`,
-      });
-      setVisible(true);
-    } else if (error) {
+      };
+    }
+    if (error) {
       const errorMessages: Record<string, string> = {
         oauth_denied: "You denied access to the application. No integration was connected.",
         oauth_failed: "The OAuth handshake failed. Please try again.",
@@ -37,21 +30,19 @@ export function OAuthStatusBanner() {
         invalid_callback: "Invalid callback parameters received. Please try connecting again.",
         oauth_init_failed: "Failed to start the OAuth flow. Please try again.",
       };
-      setStatus({
-        type: "error",
-        message: errorMessages[error] || `An unexpected error occurred: ${error}`,
-      });
-      setVisible(true);
+      return { type: "error", message: errorMessages[error] || `An unexpected error occurred: ${error}` };
     }
+    return null;
   }, [searchParams]);
+  const [dismissed, setDismissed] = useState<string | null>(null);
+  const visible = !!status && dismissed !== status.message;
 
   // Auto-dismiss after 8 seconds
   useEffect(() => {
-    if (visible) {
-      const timer = setTimeout(() => setVisible(false), 8000);
-      return () => clearTimeout(timer);
-    }
-  }, [visible]);
+    if (!status) return;
+    const timer = setTimeout(() => setDismissed(status.message), 8000);
+    return () => clearTimeout(timer);
+  }, [status]);
 
   if (!visible || !status) return null;
 
@@ -75,7 +66,7 @@ export function OAuthStatusBanner() {
         {status.message}
       </p>
       <button
-        onClick={() => setVisible(false)}
+        onClick={() => setDismissed(status.message)}
         className={cn(
           "shrink-0 rounded-md p-1 transition-colors cursor-pointer",
           isSuccess

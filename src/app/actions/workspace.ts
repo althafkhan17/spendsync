@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { ensureUserAndWorkspace } from "@/lib/auth-sync";
+import { getWorkspaceRoutingEmail } from "@/lib/env";
 
 export type WorkspaceDetails = {
   id: string;
@@ -64,7 +65,7 @@ export async function getWorkspaceDetails(): Promise<WorkspaceDetails> {
   const ownerEmail = ownerMember?.user?.email || "unknown@domain.com";
 
   // Construct CloudMailin routing address
-  const routingEmail = `ac863b2208948441ba11+${workspace.id}@cloudmailin.net`;
+  const routingEmail = getWorkspaceRoutingEmail(workspace.id);
 
   return {
     id: workspace.id,

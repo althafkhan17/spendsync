@@ -14,6 +14,7 @@ export type EmailLogRow = {
   wasReceipt: boolean;
   merchantName: string | null;
   amount: number | null;
+  currency: string;
   confidenceScore: number | null;
   createdAt: Date;
   subscriptionId: string | null;
@@ -38,6 +39,17 @@ async function verifyWorkspaceAccess(workspaceId: string, clerkId: string): Prom
   });
   if (count === 0) {
     throw new Error("Unauthorized access");
+  }
+}
+
+function extractCurrency(raw: string | null): string {
+  if (!raw) return "USD";
+  try {
+    const parsed = JSON.parse(raw);
+    const c = typeof parsed?.currency === "string" ? parsed.currency.trim().toUpperCase() : "";
+    return /^[A-Z]{3}$/.test(c) ? c : "USD";
+  } catch {
+    return "USD";
   }
 }
 
@@ -73,6 +85,7 @@ export async function getEmailLogs(): Promise<EmailLogRow[]> {
     wasReceipt: log.wasReceipt,
     merchantName: log.merchantName,
     amount: log.amount ? Number(log.amount) : null,
+    currency: extractCurrency(log.rawExtraction),
     confidenceScore: log.confidenceScore,
     createdAt: log.createdAt,
     subscriptionId: log.subscriptionId,
