@@ -21,11 +21,16 @@ import {
 } from "@/components/ui/select";
 import { updateSubscription } from "@/app/actions/subscriptions";
 import type { SubscriptionRow } from "@/app/actions/subscriptions";
+import { SUPPORTED_CURRENCIES } from "@/lib/format";
 
 interface EditSubscriptionModalProps {
   subscription: SubscriptionRow;
   children: React.ReactNode;
 }
+
+const fieldClass =
+  "h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md";
+const itemClass = "focus:bg-[#f4f7f6] cursor-pointer";
 
 function formatDateForInput(date: Date): string {
   const d = new Date(date);
@@ -43,6 +48,12 @@ export function EditSubscriptionModal({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Keep a currency that is not in the preset list (e.g. extracted from an invoice) selectable.
+  const currency = (subscription.currency || "USD").toUpperCase();
+  const currencyOptions = SUPPORTED_CURRENCIES.includes(currency as (typeof SUPPORTED_CURRENCIES)[number])
+    ? [...SUPPORTED_CURRENCIES]
+    : [currency, ...SUPPORTED_CURRENCIES];
 
   async function handleSubmit(formData: FormData) {
     setError(null);
@@ -74,10 +85,7 @@ export function EditSubscriptionModal({
         <form ref={formRef} action={handleSubmit} className="space-y-5 pt-2">
           {/* Merchant Name */}
           <div className="space-y-2">
-            <Label
-              htmlFor="edit-merchantName"
-              className="text-sm font-semibold text-ink"
-            >
+            <Label htmlFor="edit-merchantName" className="text-sm font-semibold text-ink">
               Merchant Name
             </Label>
             <Input
@@ -86,18 +94,15 @@ export function EditSubscriptionModal({
               defaultValue={subscription.merchantName}
               placeholder="e.g. Figma, Vercel, Notion"
               required
-              className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md"
+              className={fieldClass}
             />
           </div>
 
-          {/* Amount + Cycle Row */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Amount + Currency Row */}
+          <div className="grid grid-cols-[1fr_120px] gap-4">
             <div className="space-y-2">
-              <Label
-                htmlFor="edit-amount"
-                className="text-sm font-semibold text-ink"
-              >
-                Amount ($)
+              <Label htmlFor="edit-amount" className="text-sm font-semibold text-ink">
+                Amount
               </Label>
               <Input
                 id="edit-amount"
@@ -108,70 +113,72 @@ export function EditSubscriptionModal({
                 defaultValue={Number(subscription.amount).toString()}
                 placeholder="29.99"
                 required
-                className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md tabular-nums"
+                className={`${fieldClass} tabular-nums`}
               />
             </div>
             <div className="space-y-2">
-              <Label
-                htmlFor="edit-billingCycle"
-                className="text-sm font-semibold text-ink"
-              >
-                Billing Cycle
+              <Label htmlFor="edit-currency" className="text-sm font-semibold text-ink">
+                Currency
               </Label>
-              <Select
-                name="billingCycle"
-                defaultValue={subscription.billingCycle}
-                required
-              >
-                <SelectTrigger id="edit-billingCycle" className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md">
-                  <SelectValue placeholder="Select cycle" />
+              <Select name="currency" defaultValue={currency} required>
+                <SelectTrigger id="edit-currency" className={fieldClass}>
+                  <SelectValue placeholder="USD" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-hairline text-ink rounded-md">
-                  <SelectItem value="MONTHLY" className="focus:bg-[#f4f7f6] cursor-pointer">Monthly</SelectItem>
-                  <SelectItem value="ANNUAL" className="focus:bg-[#f4f7f6] cursor-pointer">Annual</SelectItem>
+                  {currencyOptions.map((code) => (
+                    <SelectItem key={code} value={code} className={itemClass}>
+                      {code}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Next Renewal Date */}
-          <div className="space-y-2">
-            <Label
-              htmlFor="edit-nextRenewalDate"
-              className="text-sm font-semibold text-ink"
-            >
-              Next Renewal Date
-            </Label>
-            <Input
-              id="edit-nextRenewalDate"
-              name="nextRenewalDate"
-              type="date"
-              defaultValue={formatDateForInput(subscription.nextRenewalDate)}
-              required
-              className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md"
-            />
+          {/* Cycle + Next Renewal Date Row */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-billingCycle" className="text-sm font-semibold text-ink">
+                Billing Cycle
+              </Label>
+              <Select name="billingCycle" defaultValue={subscription.billingCycle} required>
+                <SelectTrigger id="edit-billingCycle" className={fieldClass}>
+                  <SelectValue placeholder="Select cycle" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-hairline text-ink rounded-md">
+                  <SelectItem value="MONTHLY" className={itemClass}>Monthly</SelectItem>
+                  <SelectItem value="ANNUAL" className={itemClass}>Annual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-nextRenewalDate" className="text-sm font-semibold text-ink">
+                Next Renewal Date
+              </Label>
+              <Input
+                id="edit-nextRenewalDate"
+                name="nextRenewalDate"
+                type="date"
+                defaultValue={formatDateForInput(subscription.nextRenewalDate)}
+                required
+                className={fieldClass}
+              />
+            </div>
           </div>
 
           {/* Status */}
           <div className="space-y-2">
-            <Label
-              htmlFor="edit-status"
-              className="text-sm font-semibold text-ink"
-            >
+            <Label htmlFor="edit-status" className="text-sm font-semibold text-ink">
               Status
             </Label>
-            <Select
-              name="status"
-              defaultValue={subscription.status}
-              required
-            >
-              <SelectTrigger id="edit-status" className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md">
+            <Select name="status" defaultValue={subscription.status} required>
+              <SelectTrigger id="edit-status" className={fieldClass}>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent className="bg-white border border-hairline text-ink rounded-md">
-                <SelectItem value="ACTIVE" className="focus:bg-[#f4f7f6] cursor-pointer">Active</SelectItem>
-                <SelectItem value="CANCELLED" className="focus:bg-[#f4f7f6] cursor-pointer">Cancelled</SelectItem>
-                <SelectItem value="NEEDS_REVIEW" className="focus:bg-[#f4f7f6] cursor-pointer">Needs Review</SelectItem>
+                <SelectItem value="ACTIVE" className={itemClass}>Active</SelectItem>
+                <SelectItem value="CANCELLED" className={itemClass}>Cancelled</SelectItem>
+                <SelectItem value="NEEDS_REVIEW" className={itemClass}>Needs Review</SelectItem>
               </SelectContent>
             </Select>
           </div>

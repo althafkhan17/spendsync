@@ -40,15 +40,14 @@ export function getWorkspaceRoutingEmail(workspaceId: string): string {
 }
 
 /**
- * Validates a cron / manual trigger request. Accepts either the Vercel
- * `Authorization: Bearer <CRON_SECRET>` header or a `?secret=` query param.
+ * Validates a cron / manual trigger request. Vercel Cron sends
+ * `Authorization: Bearer <CRON_SECRET>`; that header is the only accepted
+ * credential so the secret never lands in URL access logs.
  * In development the guard is relaxed so engines can be triggered locally.
  */
-export function isAuthorizedCronRequest(headers: Headers, searchParams: URLSearchParams): boolean {
+export function isAuthorizedCronRequest(headers: Headers): boolean {
   if (isDevelopment()) return true;
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
-  const authHeader = headers.get("Authorization");
-  if (authHeader === `Bearer ${secret}`) return true;
-  return searchParams.get("secret") === secret;
+  return headers.get("Authorization") === `Bearer ${secret}`;
 }

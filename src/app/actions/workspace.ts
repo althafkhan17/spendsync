@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { ensureUserAndWorkspace } from "@/lib/auth-sync";
 import { getWorkspaceRoutingEmail } from "@/lib/env";
@@ -16,34 +15,8 @@ export type WorkspaceDetails = {
   routingEmail: string;
 };
 
-// Helper: Verify workspace membership access (IDOR Guard)
-async function verifyWorkspaceAccess(workspaceId: string, clerkId: string): Promise<void> {
-  const count = await prisma.workspace.count({
-    where: {
-      id: workspaceId,
-      members: {
-        some: {
-          user: {
-            clerkId,
-          },
-        },
-      },
-    },
-  });
-  if (count === 0) {
-    throw new Error("Unauthorized access");
-  }
-}
-
 export async function getWorkspaceDetails(): Promise<WorkspaceDetails> {
-  const { userId: clerkId } = await auth();
-  if (!clerkId) {
-    throw new Error("Unauthorized access");
-  }
-
   const { workspaceId } = await ensureUserAndWorkspace();
-
-  await verifyWorkspaceAccess(workspaceId, clerkId);
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
@@ -82,14 +55,7 @@ export async function updateWorkspaceName(
   name: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { userId: clerkId } = await auth();
-    if (!clerkId) {
-      throw new Error("Unauthorized access");
-    }
-
     const { workspaceId } = await ensureUserAndWorkspace();
-
-    await verifyWorkspaceAccess(workspaceId, clerkId);
 
     if (!name?.trim()) {
       return { success: false, error: "Workspace name is required" };
@@ -112,14 +78,7 @@ export async function updateWorkspaceName(
 
 export async function deleteAllSubscriptions(): Promise<{ success: boolean; error?: string }> {
   try {
-    const { userId: clerkId } = await auth();
-    if (!clerkId) {
-      throw new Error("Unauthorized access");
-    }
-
     const { workspaceId } = await ensureUserAndWorkspace();
-
-    await verifyWorkspaceAccess(workspaceId, clerkId);
 
     await prisma.subscription.deleteMany({
       where: { workspaceId },

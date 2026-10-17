@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { ensureUserAndWorkspace } from "@/lib/auth-sync";
 import { isMockGithubToken, validateGithubAccess } from "@/lib/providers/github-copilot";
 import { runSeatAudit } from "@/lib/engines/seat-audit";
+import { encryptSecret } from "@/lib/crypto";
 
 export type ConnectResult = {
   success: boolean;
@@ -38,18 +39,19 @@ export async function connectGithubCopilot(orgSlug: string, githubToken: string)
     }
 
     const { workspaceId } = await ensureUserAndWorkspace();
+    const storedToken = encryptSecret(token);
 
     const integration = await prisma.integration.upsert({
       where: { workspaceId_provider: { workspaceId, provider: "GITHUB_COPILOT" } },
       create: {
         workspaceId,
         provider: "GITHUB_COPILOT",
-        accessToken: token,
+        accessToken: storedToken,
         refreshToken: slug,
         isActive: true,
       },
       update: {
-        accessToken: token,
+        accessToken: storedToken,
         refreshToken: slug,
         isActive: true,
         wastedSeats: null,

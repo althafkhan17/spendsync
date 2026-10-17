@@ -9,6 +9,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { decryptOptionalSecret, decryptSecret, encryptSecret } from "@/lib/crypto";
 import type { SeatAuditReport, SeatRecord } from "@/lib/audit-report";
 import { simulateSeats } from "@/lib/simulation";
 import {
@@ -140,8 +141,8 @@ export async function runSeatAudit(opts: SeatAuditOptions = {}): Promise<SeatAud
 
       if (provider === "GITHUB_COPILOT") {
         const orgSlug = integration.refreshToken ?? "";
-        const token = integration.accessToken;
         if (!orgSlug) throw new Error("GitHub organization slug is missing. Reconnect the integration.");
+        const token = decryptSecret(integration.accessToken);
 
         if (isMockGithubToken(token)) {
           simulationReason = "Demo token: the GitHub API was not called. Connect a fine-grained PAT with Copilot billing access for live seat data.";
@@ -176,17 +177,18 @@ export async function runSeatAudit(opts: SeatAuditOptions = {}): Promise<SeatAud
         }
       } else {
         // FIGMA
-        let accessToken = integration.accessToken;
+        let accessToken = decryptSecret(integration.accessToken);
+        const storedRefreshToken = decryptOptionalSecret(integration.refreshToken);
         const expiresAt = integration.tokenExpiresAt ? new Date(integration.tokenExpiresAt).getTime() : null;
         const nearExpiry = expiresAt !== null && expiresAt - Date.now() < 5 * 60 * 1000;
-        if (nearExpiry && integration.refreshToken) {
-          const refreshed = await refreshFigmaToken(integration.refreshToken);
+        if (nearExpiry && storedRefreshToken) {
+          const refreshed = await refreshFigmaToken(storedRefreshToken);
           accessToken = refreshed.access_token;
           await prisma.integration.update({
             where: { id: integration.id },
             data: {
-              accessToken,
-              refreshToken: refreshed.refresh_token ?? integration.refreshToken,
+              accessToken: encryptSecret(accessToken),
+              refreshToken: encryptSecret(refreshed.refresh_token ?? storedRefreshToken),
               tokenExpiresAt: refreshed.expires_in ? new Date(Date.now() + refreshed.expires_in * 1000) : null,
             },
           });

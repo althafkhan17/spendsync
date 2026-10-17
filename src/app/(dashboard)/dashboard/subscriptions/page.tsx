@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
 import React from "react";
 import { AddSubscriptionModal } from "@/components/dashboard/AddSubscriptionModal";
 import { SubscriptionTable } from "@/components/dashboard/SubscriptionTable";
 import { getSubscriptions } from "@/app/actions/subscriptions";
 
+export const metadata: Metadata = { title: "Subscriptions", description: "Manage and track every SaaS subscription in your workspace." };
 export const dynamic = "force-dynamic";
 
 export default async function SubscriptionsPage() {

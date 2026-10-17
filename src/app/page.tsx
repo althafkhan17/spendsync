@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Sparkles, ArrowRight, ShieldCheck, Mail, Cpu, Calendar, Receipt, Check } from "lucide-react";
+import { Sparkles, ArrowRight, ShieldCheck, Mail, Cpu, Calendar, Receipt } from "lucide-react";
 
 export default function MarketingPage() {
   return (

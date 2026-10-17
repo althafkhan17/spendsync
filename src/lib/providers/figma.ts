@@ -9,6 +9,9 @@
 
 const FIGMA_API = "https://api.figma.com";
 
+/** httpOnly cookie carrying the OAuth `state` nonce between the connect and callback routes. */
+export const FIGMA_STATE_COOKIE = "figma_oauth_state";
+
 export interface FigmaUser {
   id: string;
   handle: string;

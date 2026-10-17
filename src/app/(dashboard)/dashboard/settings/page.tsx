@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkspaceNameEditor } from "@/components/dashboard/WorkspaceNameEditor";
@@ -6,6 +7,7 @@ import { DangerZone } from "@/components/dashboard/DangerZone";
 import { getWorkspaceDetails } from "@/app/actions/workspace";
 import { Info, Mail, ShieldAlert } from "lucide-react";
 
+export const metadata: Metadata = { title: "Settings", description: "Workspace name, receipt routing address and danger zone." };
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {

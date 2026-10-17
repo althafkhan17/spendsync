@@ -5,12 +5,13 @@ import { prisma } from "@/lib/prisma";
 import { ensureUserAndWorkspace } from "@/lib/auth-sync";
 import { validateAnthropicKey } from "@/lib/providers/anthropic";
 import { runAnthropicSync } from "@/lib/engines/anthropic-sync";
+import { encryptSecret } from "@/lib/crypto";
 import type { ConnectResult } from "@/app/actions/integrations/connect-github";
 
 /**
  * Verifies an Anthropic key live, stores the integration and runs the first
- * sync immediately. Stores the key in `accessToken` and the USD safety
- * threshold in `refreshToken`.
+ * sync immediately. Stores the key (encrypted at rest) in `accessToken` and
+ * the USD safety threshold in `refreshToken`.
  */
 export async function connectAnthropic(apiKey: string, threshold: string): Promise<ConnectResult> {
   try {
@@ -26,18 +27,19 @@ export async function connectAnthropic(apiKey: string, threshold: string): Promi
     if (!check.ok) return { success: false, error: check.reason };
 
     const { workspaceId } = await ensureUserAndWorkspace();
+    const storedKey = encryptSecret(key);
 
     const integration = await prisma.integration.upsert({
       where: { workspaceId_provider: { workspaceId, provider: "ANTHROPIC" } },
       create: {
         workspaceId,
         provider: "ANTHROPIC",
-        accessToken: key,
+        accessToken: storedKey,
         refreshToken: numericThreshold.toFixed(2),
         isActive: true,
       },
       update: {
-        accessToken: key,
+        accessToken: storedKey,
         refreshToken: numericThreshold.toFixed(2),
         isActive: true,
         wastedSeats: null,

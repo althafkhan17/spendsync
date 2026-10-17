@@ -1,6 +1,5 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { ensureUserAndWorkspace } from "@/lib/auth-sync";
 
@@ -23,25 +22,6 @@ export type EmailLogRow = {
   } | null;
 };
 
-// Helper: Verify workspace membership access (IDOR Guard)
-async function verifyWorkspaceAccess(workspaceId: string, clerkId: string): Promise<void> {
-  const count = await prisma.workspace.count({
-    where: {
-      id: workspaceId,
-      members: {
-        some: {
-          user: {
-            clerkId,
-          },
-        },
-      },
-    },
-  });
-  if (count === 0) {
-    throw new Error("Unauthorized access");
-  }
-}
-
 function extractCurrency(raw: string | null): string {
   if (!raw) return "USD";
   try {
@@ -54,14 +34,7 @@ function extractCurrency(raw: string | null): string {
 }
 
 export async function getEmailLogs(): Promise<EmailLogRow[]> {
-  const { userId: clerkId } = await auth();
-  if (!clerkId) {
-    throw new Error("Unauthorized access");
-  }
-
   const { workspaceId } = await ensureUserAndWorkspace();
-
-  await verifyWorkspaceAccess(workspaceId, clerkId);
 
   const logs = await prisma.emailLog.findMany({
     where: { workspaceId },

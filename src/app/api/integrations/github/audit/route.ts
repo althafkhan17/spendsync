@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureUserAndWorkspace } from "@/lib/auth-sync";
 import { runSeatAudit } from "@/lib/engines/seat-audit";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  * Runs the seat audit for the signed-in workspace's GitHub Copilot
  * integration and returns the stored report.
  */
-async function handle(_request: NextRequest) {
+async function handle() {
   try {
     const { workspaceId } = await ensureUserAndWorkspace();
     const integration = await prisma.integration.findUnique({
@@ -37,10 +37,10 @@ async function handle(_request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
-  return handle(request);
+export async function GET() {
+  return handle();
 }
 
-export async function POST(request: NextRequest) {
-  return handle(request);
+export async function POST() {
+  return handle();
 }

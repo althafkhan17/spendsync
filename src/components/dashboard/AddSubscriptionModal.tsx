@@ -21,6 +21,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { addSubscription } from "@/app/actions/subscriptions";
+import { SUPPORTED_CURRENCIES } from "@/lib/format";
+
+const fieldClass =
+  "h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md";
+const itemClass = "focus:bg-[#f4f7f6] cursor-pointer";
 
 export function AddSubscriptionModal() {
   const [open, setOpen] = useState(false);
@@ -71,15 +76,15 @@ export function AddSubscriptionModal() {
               name="merchantName"
               placeholder="e.g. Figma, Vercel, Notion"
               required
-              className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md"
+              className={fieldClass}
             />
           </div>
 
-          {/* Amount + Cycle Row */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Amount + Currency Row */}
+          <div className="grid grid-cols-[1fr_120px] gap-4">
             <div className="space-y-2">
               <Label htmlFor="amount" className="text-sm font-semibold text-ink">
-                Amount ($)
+                Amount
               </Label>
               <Input
                 id="amount"
@@ -89,37 +94,56 @@ export function AddSubscriptionModal() {
                 min="0.01"
                 placeholder="29.99"
                 required
-                className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md tabular-nums"
+                className={`${fieldClass} tabular-nums`}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="billingCycle" className="text-sm font-semibold text-ink">
-                Billing Cycle
+              <Label htmlFor="currency" className="text-sm font-semibold text-ink">
+                Currency
               </Label>
-              <Select name="billingCycle" defaultValue="MONTHLY" required>
-                <SelectTrigger id="billingCycle" className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md">
-                  <SelectValue placeholder="Select cycle" />
+              <Select name="currency" defaultValue="USD" required>
+                <SelectTrigger id="currency" className={fieldClass}>
+                  <SelectValue placeholder="USD" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-hairline text-ink rounded-md">
-                  <SelectItem value="MONTHLY" className="focus:bg-[#f4f7f6] cursor-pointer">Monthly</SelectItem>
-                  <SelectItem value="ANNUAL" className="focus:bg-[#f4f7f6] cursor-pointer">Annual</SelectItem>
+                  {SUPPORTED_CURRENCIES.map((code) => (
+                    <SelectItem key={code} value={code} className={itemClass}>
+                      {code}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Next Renewal Date */}
-          <div className="space-y-2">
-            <Label htmlFor="nextRenewalDate" className="text-sm font-semibold text-ink">
-              Next Renewal Date
-            </Label>
-            <Input
-              id="nextRenewalDate"
-              name="nextRenewalDate"
-              type="date"
-              required
-              className="h-11 bg-white border border-hairline-strong text-ink focus-visible:ring-[#00684a] rounded-md"
-            />
+          {/* Cycle + Next Renewal Date Row */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="billingCycle" className="text-sm font-semibold text-ink">
+                Billing Cycle
+              </Label>
+              <Select name="billingCycle" defaultValue="MONTHLY" required>
+                <SelectTrigger id="billingCycle" className={fieldClass}>
+                  <SelectValue placeholder="Select cycle" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-hairline text-ink rounded-md">
+                  <SelectItem value="MONTHLY" className={itemClass}>Monthly</SelectItem>
+                  <SelectItem value="ANNUAL" className={itemClass}>Annual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nextRenewalDate" className="text-sm font-semibold text-ink">
+                Next Renewal Date
+              </Label>
+              <Input
+                id="nextRenewalDate"
+                name="nextRenewalDate"
+                type="date"
+                required
+                className={fieldClass}
+              />
+            </div>
           </div>
 
           {/* Hidden status field — defaults to ACTIVE */}

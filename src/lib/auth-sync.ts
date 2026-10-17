@@ -1,21 +1,24 @@
+import { cache } from "react";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
 /**
  * Ensures the currently logged-in Clerk user has a corresponding
- * User + Workspace row in the database. Called on every dashboard
- * page load (results are cached per-request by Next.js).
+ * User + Workspace row in the database and returns the active workspaceId.
  *
- * Returns the user's active workspaceId.
+ * Wrapped in React `cache()` so every server action and page that calls it
+ * during the same request shares one lookup instead of each hitting the DB.
+ * Because the workspace is derived from the caller's own membership, callers
+ * do not need a separate "does this user belong to this workspace" check.
  */
-export async function ensureUserAndWorkspace(): Promise<{
+export const ensureUserAndWorkspace = cache(async function ensureUserAndWorkspace(): Promise<{
   userId: string;
   workspaceId: string;
 }> {
   const { userId: clerkId } = await auth();
 
   if (!clerkId) {
-    throw new Error("Unauthorized — no active Clerk session");
+    throw new Error("Unauthorized access");
   }
 
   // Check if the user already exists in our DB
@@ -89,4 +92,4 @@ export async function ensureUserAndWorkspace(): Promise<{
   });
 
   return result;
-}
+});

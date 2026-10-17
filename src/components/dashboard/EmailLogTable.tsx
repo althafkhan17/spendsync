@@ -23,11 +23,6 @@ function formatDate(date: Date) {
   });
 }
 
-function truncate(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength) + "…";
-}
-
 function parseSender(sender: string) {
   const match = sender.match(/^(.*?)\s*<(.*?)>$/);
   if (match) {

@@ -10,7 +10,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SpendSync — SaaS Spend & Renewal Tracker",
+  title: {
+    default: "SpendSync — SaaS Spend & Renewal Tracker",
+    template: "%s · SpendSync",
+  },
   description:
     "Track, manage, and optimize your SaaS subscriptions. Get automated renewal alerts and real-time spend analytics.",
 };

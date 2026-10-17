@@ -19,6 +19,7 @@ import {
   round2,
 } from "@/lib/providers/anthropic";
 import { getAppUrl, getResendFrom, isResendConfigured } from "@/lib/env";
+import { decryptSecret } from "@/lib/crypto";
 import { renderSpendAlertEmail } from "@/emails/SpendAlertTemplate";
 
 export interface AnthropicSyncResult {
@@ -90,8 +91,8 @@ export async function runAnthropicSync(opts: AnthropicSyncOptions = {}): Promise
   for (const integration of integrations) {
     const base = { integrationId: integration.id, workspaceId: integration.workspaceId, workspaceName: integration.workspace.name };
     try {
-      const apiKey = integration.accessToken;
-      if (!apiKey) throw new Error("API key missing. Reconnect Anthropic.");
+      if (!integration.accessToken) throw new Error("API key missing. Reconnect Anthropic.");
+      const apiKey = decryptSecret(integration.accessToken);
       const thresholdUsd = Math.max(0.01, parseFloat(integration.refreshToken || "50") || 50);
 
       let dataSource: TokenSpendReport["dataSource"] = "SIMULATED";

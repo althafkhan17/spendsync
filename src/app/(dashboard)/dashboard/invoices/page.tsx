@@ -1,7 +1,9 @@
+import type { Metadata } from "next";
 import React from "react";
 import { EmailLogTable } from "@/components/dashboard/EmailLogTable";
 import { getEmailLogs } from "@/app/actions/emails";
 
+export const metadata: Metadata = { title: "Invoices", description: "Audit trail of processed inbound emails, receipts and invoices." };
 export const dynamic = "force-dynamic";
 
 export default async function InvoicesPage() {

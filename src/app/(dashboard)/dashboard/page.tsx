@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import React from "react";
 import { currentUser } from "@clerk/nextjs/server";
 import { Flame, CreditCard, CalendarClock, ShieldAlert } from "lucide-react";
@@ -12,6 +13,7 @@ import { calculateDashboardMetrics } from "@/lib/analytics";
 import { parseAuditReport, isSeatReport } from "@/lib/audit-report";
 import { formatMoney } from "@/lib/format";
 
+export const metadata: Metadata = { title: "Dashboard", description: "Overview of your SaaS spend, renewals and detected seat leaks." };
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {

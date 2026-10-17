@@ -1,5 +1,8 @@
 /** Client-safe formatting helpers shared by dashboard components. */
 
+/** Currencies offered in the add/edit subscription forms. Any ISO 4217 code is accepted server-side. */
+export const SUPPORTED_CURRENCIES = ["USD", "EUR", "GBP", "INR", "JPY", "CAD", "AUD"] as const;
+
 export function formatMoney(amount: number, currency = "USD", opts: { compact?: boolean } = {}): string {
   try {
     return new Intl.NumberFormat("en-US", {

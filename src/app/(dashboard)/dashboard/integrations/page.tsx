@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
 import React, { Suspense } from "react";
 import { getIntegrations } from "@/app/actions/integrations";
 import { IntegrationsList } from "@/components/dashboard/IntegrationsList";
 import { OAuthStatusBanner } from "@/components/dashboard/OAuthStatusBanner";
 
+export const metadata: Metadata = { title: "Integrations", description: "Connect vendor platforms to audit idle seats and token spend." };
 export const dynamic = "force-dynamic";
 
 export default async function IntegrationsPage() {

@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  */
 async function handle(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  if (!isAuthorizedCronRequest(request.headers, searchParams)) {
+  if (!isAuthorizedCronRequest(request.headers)) {
     console.error("❌ Unauthorized renewals request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

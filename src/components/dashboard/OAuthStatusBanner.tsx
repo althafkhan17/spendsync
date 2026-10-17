@@ -17,7 +17,7 @@ export function OAuthStatusBanner() {
     if (success) {
       return {
         type: "success",
-        message: `${success.charAt(0).toUpperCase() + success.slice(1)} connected successfully! The first audit will run on the next scheduled cycle.`,
+        message: `${success.charAt(0).toUpperCase() + success.slice(1)} connected successfully! The first audit has run and will repeat daily.`,
       };
     }
     if (error) {
@@ -28,6 +28,7 @@ export function OAuthStatusBanner() {
         config_missing: "Server configuration is incomplete. Please check environment variables.",
         unauthorized: "You don't have permission to connect integrations to this workspace.",
         invalid_callback: "Invalid callback parameters received. Please try connecting again.",
+        state_mismatch: "The sign-in request could not be verified (it may have expired). Please start the connection again.",
         oauth_init_failed: "Failed to start the OAuth flow. Please try again.",
       };
       return { type: "error", message: errorMessages[error] || `An unexpected error occurred: ${error}` };
