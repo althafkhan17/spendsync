@@ -1,3 +1,5 @@
+import { isSeatReport, parseAuditReport } from "@/lib/audit-report";
+
 export interface SubscriptionLike {
   amount: unknown; // Prisma Decimal or number
   currency?: string | null;
@@ -56,5 +58,46 @@ export function calculateDashboardMetrics(subscriptions: SubscriptionLike[]): Da
     activeCount: active.length,
     upcomingRenewalsCount,
     needsReviewCount: subscriptions.filter((s) => s.status === "NEEDS_REVIEW").length,
+  };
+}
+
+export interface IntegrationLike {
+  provider: string;
+  isActive: boolean;
+  wastedAmount: number | null;
+  tokenUsageReport: string | null;
+}
+
+export interface LeakMetrics {
+  /** Monthly idle-seat leak per currency, largest first. */
+  entries: Array<[currency: string, amount: number]>;
+  /** Number of integrations contributing a leak. */
+  integrationCount: number;
+  /** Whether any integration is connected at all (drives the empty-state copy). */
+  hasActiveIntegration: boolean;
+}
+
+/** Sums idle-seat leaks across connected seat-based integrations, grouped by currency. */
+export function calculateLeakMetrics(integrations: IntegrationLike[]): LeakMetrics {
+  const byCurrency: Record<string, number> = {};
+  let integrationCount = 0;
+  for (const i of integrations) {
+    if (!i.isActive) continue;
+    const report = parseAuditReport(i.tokenUsageReport);
+    if (isSeatReport(report)) {
+      const leak = report.idleSeats * report.seatUnitPrice;
+      if (leak > 0) {
+        byCurrency[report.currency] = (byCurrency[report.currency] ?? 0) + leak;
+        integrationCount++;
+      }
+    } else if (i.provider !== "ANTHROPIC" && i.wastedAmount && i.wastedAmount > 0) {
+      byCurrency.USD = (byCurrency.USD ?? 0) + i.wastedAmount;
+      integrationCount++;
+    }
+  }
+  return {
+    entries: Object.entries(byCurrency).sort((a, b) => b[1] - a[1]),
+    integrationCount,
+    hasActiveIntegration: integrations.some((i) => i.isActive),
   };
 }

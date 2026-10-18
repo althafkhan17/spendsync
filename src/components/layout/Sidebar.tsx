@@ -17,23 +17,28 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: Home },
-  { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
-  { label: "Invoices", href: "/dashboard/invoices", icon: Receipt },
-  { label: "Integrations", href: "/dashboard/integrations", icon: Plug },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings },
+const NAV = [
+  { label: "Dashboard", path: "", icon: Home },
+  { label: "Subscriptions", path: "/subscriptions", icon: CreditCard },
+  { label: "Invoices", path: "/invoices", icon: Receipt },
+  { label: "Integrations", path: "/integrations", icon: Plug },
+  { label: "Settings", path: "/settings", icon: Settings },
 ];
 
 export interface SidebarProps {
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
+  /** Route prefix for navigation links. Defaults to the real dashboard. */
+  basePath?: string;
+  /** Public demo: replaces the Clerk user section with a sign-up prompt. */
+  demo?: boolean;
 }
 
-export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
+export function Sidebar({ collapsed, setCollapsed, basePath = "/dashboard", demo = false }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useUser();
+  const navItems = NAV.map((item) => ({ ...item, href: `${basePath}${item.path}` }));
 
   return (
     <>
@@ -84,7 +89,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         {/* Logo / Header */}
         <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
           <Link
-            href="/dashboard"
+            href={basePath}
             className="flex items-center gap-2.5 overflow-hidden group"
           >
             {/* Logo icon */}
@@ -113,8 +118,8 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {navItems.map((item) => {
             const isActive =
-              item.href === "/dashboard"
-                ? pathname === "/dashboard"
+              item.href === basePath
+                ? pathname === basePath
                 : pathname.startsWith(item.href);
             const Icon = item.icon;
 
@@ -148,36 +153,61 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         {/* Divider above user profile */}
         <div className="hidden border-t border-sidebar-border lg:block" />
 
-        {/* User Profile — Clerk UserButton */}
+        {/* User profile: Clerk UserButton, or a sign-up prompt in the public demo */}
         <div
           id="user-profile-section"
           className="border-t border-sidebar-border px-3 py-3"
         >
-          <div
-            className={cn(
-              "flex items-center overflow-hidden rounded-lg px-2 py-2",
-              collapsed ? "justify-center" : "gap-3"
-            )}
-          >
-            <UserButton
-              appearance={{
-                elements: {
-                  avatarBox: "h-8 w-8 shrink-0",
-                  userButtonOuterIdentifier: "hidden",
-                },
-              }}
-            />
-            {!collapsed && user && (
-              <div className="flex flex-col min-w-0 flex-1">
-                <span className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">
-                  {user.fullName || user.primaryEmailAddress?.emailAddress.split("@")[0]}
-                </span>
-                <span className="truncate text-[10px] text-sidebar-foreground/60 font-medium mt-0.5">
-                  Manage account
-                </span>
+          {demo ? (
+            <Link
+              href="/sign-up"
+              title="Create your own workspace"
+              className={cn(
+                "flex items-center overflow-hidden rounded-lg px-2 py-2 transition-colors hover:bg-sidebar-accent/60",
+                collapsed ? "justify-center" : "gap-3"
+              )}
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-[10px] font-bold tracking-wide text-sidebar-foreground">
+                DEMO
               </div>
-            )}
-          </div>
+              {!collapsed && (
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">
+                    Demo visitor
+                  </span>
+                  <span className="truncate text-[10px] text-sidebar-primary font-medium mt-0.5">
+                    Create your workspace
+                  </span>
+                </div>
+              )}
+            </Link>
+          ) : (
+            <div
+              className={cn(
+                "flex items-center overflow-hidden rounded-lg px-2 py-2",
+                collapsed ? "justify-center" : "gap-3"
+              )}
+            >
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "h-8 w-8 shrink-0",
+                    userButtonOuterIdentifier: "hidden",
+                  },
+                }}
+              />
+              {!collapsed && user && (
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">
+                    {user.fullName || user.primaryEmailAddress?.emailAddress.split("@")[0]}
+                  </span>
+                  <span className="truncate text-[10px] text-sidebar-foreground/60 font-medium mt-0.5">
+                    Manage account
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </aside>
     </>

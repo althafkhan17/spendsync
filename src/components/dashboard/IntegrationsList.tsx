@@ -9,8 +9,11 @@ const PROVIDER_KEYS = Object.keys(PROVIDERS);
 
 export function IntegrationsList({
   activeIntegrations,
+  readOnly = false,
 }: {
   activeIntegrations: IntegrationRow[];
+  /** Public demo: connect, audit and disconnect are disabled. */
+  readOnly?: boolean;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -136,6 +139,7 @@ export function IntegrationsList({
                       key={key}
                       providerKey={key}
                       integration={match}
+                      readOnly={readOnly}
                     />
                   );
                 })}
@@ -151,7 +155,7 @@ export function IntegrationsList({
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {availableKeys.map((key) => {
-                  return <IntegrationCard key={key} providerKey={key} />;
+                  return <IntegrationCard key={key} providerKey={key} readOnly={readOnly} />;
                 })}
               </div>
             </div>

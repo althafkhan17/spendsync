@@ -9,7 +9,13 @@ import { DataSourceBadge } from "@/components/dashboard/DataSourceBadge";
 import type { IntegrationRow } from "@/app/actions/integrations";
 
 /** Compact summary of every connected integration's latest finding. Server component. */
-export function LeakWatch({ integrations }: { integrations: IntegrationRow[] }) {
+export function LeakWatch({
+  integrations,
+  integrationsHref = "/dashboard/integrations",
+}: {
+  integrations: IntegrationRow[];
+  integrationsHref?: string;
+}) {
   const connected = integrations.filter((i) => i.isActive);
 
   return (
@@ -20,7 +26,7 @@ export function LeakWatch({ integrations }: { integrations: IntegrationRow[] }) 
             <ShieldAlert className="h-4 w-4 text-[#00684a]" />
             Leak watch
           </CardTitle>
-          <Link href="/dashboard/integrations" className="inline-flex items-center gap-1 text-xs font-semibold text-[#00684a] hover:underline">
+          <Link href={integrationsHref} className="inline-flex items-center gap-1 text-xs font-semibold text-[#00684a] hover:underline">
             Integrations <ArrowRight className="h-3 w-3" />
           </Link>
         </div>

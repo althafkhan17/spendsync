@@ -134,7 +134,16 @@ type Notice = { type: "success" | "error" | "info"; text: string };
 // IntegrationCard component
 // ─────────────────────────────────────────────────────────
 
-export function IntegrationCard({ providerKey, integration }: { providerKey: string; integration?: IntegrationRow }) {
+export function IntegrationCard({
+  providerKey,
+  integration,
+  readOnly = false,
+}: {
+  providerKey: string;
+  integration?: IntegrationRow;
+  /** Public demo: actions that would write to the database are disabled. */
+  readOnly?: boolean;
+}) {
   const meta = PROVIDERS[providerKey];
   const isConnected = !!integration && integration.isActive;
   const [isPending, startTransition] = useTransition();
@@ -291,7 +300,16 @@ export function IntegrationCard({ providerKey, integration }: { providerKey: str
 
         {/* Actions */}
         <div className="mt-4">
-          {isConnected ? (
+          {readOnly ? (
+            <button
+              type="button"
+              disabled
+              title="Disabled in demo mode. Create your own workspace to connect real integrations."
+              className="flex h-10 w-full cursor-not-allowed items-center justify-center rounded-full border border-dashed border-hairline-strong bg-surface-3 px-5 text-center text-[13px] font-semibold text-ink-subtle"
+            >
+              {isConnected ? "Run Audit (demo)" : connectable ? `Connect ${meta.name} (demo)` : "Coming soon"}
+            </button>
+          ) : isConnected ? (
             !showConfirm ? (
               <div className="flex gap-2">
                 <button

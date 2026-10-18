@@ -37,6 +37,10 @@ See [.env.example](.env.example) for the full list with comments. Required for t
 
 `INTEGRATION_ENCRYPTION_KEY` must be the same value in every environment that shares a database, otherwise credentials written by one environment cannot be read by another.
 
+## Public demo
+
+`/demo` is a read-only tour of the whole dashboard with sample data. It is excluded from Clerk in `src/proxy.ts`, renders entirely from `src/lib/demo-data.ts`, never touches the database, and disables every write action. Share it with prospects who have not signed up.
+
 ## How it works
 
 **Email ingestion.** Each workspace gets a routing address like `<inbox>+<workspaceId>@cloudmailin.net` (shown in Settings). CloudMailin posts the email as JSON to `POST /api/webhooks/inbound?secret=<WEBHOOK_SECRET>`. Gemini extracts the vendor, seat count, unit price, currency, billing cycle and renewal date from the PDF attachment (or the text body as a fallback) and the subscription is created or updated. Every email is recorded on the Invoices page.

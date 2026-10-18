@@ -5,6 +5,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 // to exclude them from protection.
 const isPublicRoute = createRouteMatcher([
   "/",                 // Public landing page
+  "/demo(.*)",         // Public read-only demo with sample data (no DB access)
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/webhooks(.*)", // External services POST here — must bypass Clerk auth

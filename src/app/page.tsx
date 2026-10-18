@@ -81,6 +81,12 @@ export default function MarketingPage() {
               Get Started Free
               <ArrowRight className="h-4 w-4" />
             </Link>
+            <Link
+              href="/demo"
+              className="flex w-full sm:w-auto h-11 items-center justify-center gap-2 rounded-full border border-[#00ed64]/60 bg-transparent hover:bg-[#00ed64]/10 hover:border-[#00ed64] px-6 text-sm font-semibold text-[#00ed64] transition-all cursor-pointer"
+            >
+              View Live Demo
+            </Link>
             <a
               href="#how-it-works"
               className="flex w-full sm:w-auto h-11 items-center justify-center gap-2 rounded-full border border-[#5c6c7a] bg-transparent hover:bg-white/5 hover:border-white px-6 text-sm font-semibold text-white transition-all cursor-pointer"
