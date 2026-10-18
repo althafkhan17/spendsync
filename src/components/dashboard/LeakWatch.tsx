@@ -6,6 +6,7 @@ import { parseAuditReport, isSeatReport, isTokenReport } from "@/lib/audit-repor
 import { providerLabel } from "@/lib/providers/labels";
 import { formatMoney, relativeTime } from "@/lib/format";
 import { DataSourceBadge } from "@/components/dashboard/DataSourceBadge";
+import { MerchantLogo } from "@/components/brand/MerchantLogo";
 import type { IntegrationRow } from "@/app/actions/integrations";
 
 /** Compact summary of every connected integration's latest finding. Server component. */
@@ -65,7 +66,8 @@ export function LeakWatch({
               }
               return (
                 <li key={i.id} className="flex items-center justify-between gap-3 px-5 py-3">
-                  <div className="min-w-0">
+                  <MerchantLogo name={i.provider} size={32} />
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-[13px] font-semibold text-ink">{providerLabel(i.provider)}</span>
                       {report && <DataSourceBadge dataSource={report.dataSource} reason={report.simulationReason} />}

@@ -4,7 +4,8 @@
  * Everything here is generated in memory on each request: no database access,
  * no Clerk session. Dates are relative to "now" so the renewal radar and leak
  * warnings always look current. Integration reports are built with the same
- * deterministic simulator the real app uses and are labelled SIMULATED.
+ * deterministic simulator the real app uses; because the whole workspace is
+ * fictional they are presented the way a live-connected workspace would look.
  */
 
 import { Prisma } from "@prisma/client";
@@ -20,8 +21,6 @@ import { getWorkspaceRoutingEmail } from "@/lib/env";
 export const DEMO_WORKSPACE_ID = "00000000-0000-4000-8000-00000000demo";
 export const DEMO_WORKSPACE_NAME = "Northwind Studio";
 export const DEMO_FIRST_NAME = "Alex";
-export const DEMO_SIMULATION_REASON =
-  "Demo mode: this is sample data generated for the public demo. Connect a real token in your own workspace to see live numbers.";
 
 const DAY = 24 * 60 * 60 * 1000;
 const inDays = (n: number) => new Date(Date.now() + n * DAY);
@@ -142,8 +141,8 @@ function seatReport(provider: "FIGMA" | "GITHUB_COPILOT", billedSeats: number, s
     kind: "SEATS",
     version: 2,
     provider,
-    dataSource: "SIMULATED",
-    simulationReason: DEMO_SIMULATION_REASON,
+    dataSource: "LIVE",
+    simulationReason: null,
     generatedAt: agoHours(3).toISOString(),
     currency: "USD",
     seatUnitPrice,
@@ -185,10 +184,10 @@ function tokenReport(thresholdUsd: number): TokenSpendReport {
     kind: "TOKENS",
     version: 2,
     provider: "ANTHROPIC",
-    dataSource: "SIMULATED",
-    simulationReason: DEMO_SIMULATION_REASON,
+    dataSource: "LIVE",
+    simulationReason: null,
     generatedAt: agoHours(1).toISOString(),
-    keyKind: "DEMO",
+    keyKind: "ADMIN",
     period: { start: monthStart.toISOString(), end: now.toISOString() },
     totalCostUsd,
     thresholdUsd,

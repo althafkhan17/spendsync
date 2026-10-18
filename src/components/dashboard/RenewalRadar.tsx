@@ -2,7 +2,8 @@ import React from "react";
 import { CalendarClock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { daysUntil, formatDate, formatMoney, initials } from "@/lib/format";
+import { daysUntil, formatDate, formatMoney } from "@/lib/format";
+import { MerchantLogo } from "@/components/brand/MerchantLogo";
 import type { SubscriptionRow } from "@/app/actions/subscriptions";
 
 function urgency(days: number) {
@@ -41,9 +42,7 @@ export function RenewalRadar({ subscriptions, limit = 6 }: { subscriptions: Subs
               return (
                 <li key={s.id} className="px-5 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-hairline bg-surface-3 text-[11px] font-bold text-ink">
-                      {initials(s.merchantName)}
-                    </div>
+                    <MerchantLogo name={s.merchantName} size={32} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate text-[13px] font-semibold text-ink">{s.merchantName}</span>

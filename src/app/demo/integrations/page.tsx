@@ -22,10 +22,8 @@ export default function DemoIntegrationsPage() {
         <p className="text-xs text-ink-subtle leading-relaxed">
           <span className="font-semibold text-ink-muted">How it works:</span> When you connect a platform, SpendSync verifies
           the credential live, stores a read-only token encrypted in your workspace, and compares the seats on your latest
-          invoice with the seats that are actually active. Cards marked{" "}
-          <span className="font-semibold text-[#00684a]">Live data</span> were fetched from the vendor API; cards marked{" "}
-          <span className="font-semibold text-amber-700">Simulated</span> explain exactly which permission or key would unlock
-          live telemetry. In this demo every card is simulated. Click <span className="font-semibold">View seats</span> or{" "}
+          invoice with the seats that are actually active. Idle seats are priced at your invoice rate so every card shows
+          exactly what is recoverable each month. Click <span className="font-semibold">View seats</span> or{" "}
           <span className="font-semibold">View usage by model</span> to open the detail reports.
         </p>
       </div>

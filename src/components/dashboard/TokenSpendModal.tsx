@@ -59,7 +59,7 @@ export function TokenSpendModal({
         </button>
 
         <div className="mb-4 flex shrink-0 items-center gap-3">
-          <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm", iconBg)}>{icon}</div>
+          <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl shadow-sm", iconBg)}>{icon}</div>
           <div>
             <h3 className="text-lg font-bold text-ink">Anthropic Claude usage</h3>
             <p className="text-xs font-medium text-ink-subtle">

@@ -13,10 +13,14 @@ import { formatMoney, relativeTime } from "@/lib/format";
 import { DataSourceBadge } from "@/components/dashboard/DataSourceBadge";
 import { SeatAuditModal } from "@/components/dashboard/SeatAuditModal";
 import { TokenSpendModal, budgetTone } from "@/components/dashboard/TokenSpendModal";
+import { MerchantLogo } from "@/components/brand/MerchantLogo";
 
 // ─────────────────────────────────────────────────────────
-// Provider metadata — icons, colors, descriptions
+// Provider metadata — logos, colors, descriptions
 // ─────────────────────────────────────────────────────────
+
+/** White tile so the real brand logos render in their own colours. */
+const TILE = "bg-white border border-hairline";
 
 type ProviderMeta = {
   name: string;
@@ -35,90 +39,60 @@ export const PROVIDERS: Record<string, ProviderMeta> = {
     description: "Audit editor seats and identify inactive designers across your workspace.",
     permission: "Requires Read-Only Organization Admin Access",
     gradient: "from-[#00ed64]/4 to-transparent",
-    iconBg: "bg-[#001e2b]",
-    iconColor: "text-white",
+    iconBg: TILE,
+    iconColor: "text-ink",
     accentColor: "text-[#00684a]",
-    icon: (
-      <svg viewBox="0 0 38 57" fill="none" className="h-5 w-5">
-        <path d="M19 28.5C19 23.2533 23.2533 19 28.5 19C33.7467 19 38 23.2533 38 28.5C38 33.7467 33.7467 38 28.5 38C23.2533 38 19 33.7467 19 28.5Z" fill="white"/>
-        <path d="M0 47.5C0 42.2533 4.25329 38 9.5 38H19V47.5C19 52.7467 14.7467 57 9.5 57C4.25329 57 0 52.7467 0 47.5Z" fill="white"/>
-        <path d="M19 0V19H28.5C33.7467 19 38 14.7467 38 9.5C38 4.25329 33.7467 0 28.5 0H19Z" fill="white"/>
-        <path d="M0 9.5C0 14.7467 4.25329 19 9.5 19H19V0H9.5C4.25329 0 0 4.25329 0 9.5Z" fill="white"/>
-        <path d="M0 28.5C0 33.7467 4.25329 38 9.5 38H19V19H9.5C4.25329 19 0 23.2533 0 28.5Z" fill="white"/>
-      </svg>
-    ),
+    icon: <MerchantLogo name="Figma" size={28} rounded="rounded-md" className="border-0 bg-transparent" />,
   },
   SLACK: {
     name: "Slack",
     description: "Monitor workspace member activity and flag dormant user accounts.",
     permission: "Requires Read-Only Workspace Admin Access",
     gradient: "from-[#00ed64]/4 to-transparent",
-    iconBg: "bg-[#001e2b]",
-    iconColor: "text-white",
+    iconBg: TILE,
+    iconColor: "text-ink",
     accentColor: "text-[#00684a]",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-        <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" fill="white"/>
-      </svg>
-    ),
+    icon: <MerchantLogo name="Slack" size={28} rounded="rounded-md" className="border-0 bg-transparent" />,
   },
   ZOOM: {
     name: "Zoom",
     description: "Track licensed seats and identify users who haven't joined meetings recently.",
     permission: "Requires Read-Only Account Admin Access",
     gradient: "from-[#00ed64]/4 to-transparent",
-    iconBg: "bg-[#001e2b]",
-    iconColor: "text-white",
+    iconBg: TILE,
+    iconColor: "text-ink",
     accentColor: "text-[#00684a]",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-        <path d="M3.5 6.5C3.5 5.39543 4.39543 4.5 5.5 4.5H14C15.1046 4.5 16 5.39543 16 6.5V17.5C16 18.6046 15.1046 19.5 14 19.5H5.5C4.39543 19.5 3.5 18.6046 3.5 17.5V6.5Z" fill="white"/>
-        <path d="M16 9.5L20.5 6.5V17.5L16 14.5V9.5Z" fill="white"/>
-      </svg>
-    ),
+    icon: <MerchantLogo name="Zoom" size={28} rounded="rounded-md" className="border-0 bg-transparent" />,
   },
   GITHUB: {
     name: "GitHub",
     description: "Audit organization seats and detect developers with zero recent commits.",
     permission: "Requires Read-Only Organization Access",
     gradient: "from-[#00ed64]/4 to-transparent",
-    iconBg: "bg-[#001e2b]",
-    iconColor: "text-white",
+    iconBg: TILE,
+    iconColor: "text-ink",
     accentColor: "text-[#00684a]",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-        <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z" fill="white"/>
-      </svg>
-    ),
+    icon: <MerchantLogo name="GitHub" size={28} rounded="rounded-md" className="border-0 bg-transparent" />,
   },
   GITHUB_COPILOT: {
     name: "GitHub Copilot",
     description: "Audit Copilot seat assignments and flag inactive developers across your organization.",
     permission: "Requires Fine-Grained PAT with Copilot Organization admin scopes.",
     gradient: "from-[#00ed64]/4 to-transparent",
-    iconBg: "bg-[#001e2b]",
-    iconColor: "text-white",
+    iconBg: TILE,
+    iconColor: "text-ink",
     accentColor: "text-[#00684a]",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-        <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z" fill="white"/>
-      </svg>
-    ),
+    icon: <MerchantLogo name="GitHub Copilot" size={28} rounded="rounded-md" className="border-0 bg-transparent" />,
   },
   ANTHROPIC: {
     name: "Anthropic Claude",
     description: "Track real-time token consumption, monitor usage spikes, and set a safety budget threshold.",
     permission: "Requires API Key and Safety Threshold (USD)",
     gradient: "from-[#00ed64]/4 to-transparent",
-    iconBg: "bg-[#001e2b]",
-    iconColor: "text-white",
+    iconBg: TILE,
+    iconColor: "text-ink",
     accentColor: "text-[#00684a]",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-        <circle cx="12" cy="12" r="4" />
-      </svg>
-    ),
+    icon: <MerchantLogo name="Anthropic" size={28} rounded="rounded-md" className="border-0 bg-transparent" />,
   },
 };
 
@@ -301,14 +275,38 @@ export function IntegrationCard({
         {/* Actions */}
         <div className="mt-4">
           {readOnly ? (
-            <button
-              type="button"
-              disabled
-              title="Disabled in demo mode. Create your own workspace to connect real integrations."
-              className="flex h-10 w-full cursor-not-allowed items-center justify-center rounded-full border border-dashed border-hairline-strong bg-surface-3 px-5 text-center text-[13px] font-semibold text-ink-subtle"
-            >
-              {isConnected ? "Run Audit (demo)" : connectable ? `Connect ${meta.name} (demo)` : "Coming soon"}
-            </button>
+            isConnected ? (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  aria-disabled
+                  title="Available in your own workspace"
+                  className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-[#00ed64] px-5 text-center text-[13px] font-semibold text-[#001e2b] shadow-sm"
+                >
+                  {providerKey === "ANTHROPIC" ? "Sync usage" : "Run Audit"}
+                </button>
+                <button
+                  type="button"
+                  aria-disabled
+                  title="Available in your own workspace"
+                  className="flex h-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-5 text-[13px] font-medium text-slate-600"
+                >
+                  Disconnect
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                aria-disabled
+                title="Available in your own workspace"
+                className={cn(
+                  "flex h-10 w-full items-center justify-center rounded-full px-5 text-center text-[13px] font-semibold shadow-sm",
+                  connectable ? "bg-[#001e2b] text-white" : "border border-dashed border-hairline-strong bg-surface-3 text-ink-subtle"
+                )}
+              >
+                {connectable ? `Connect ${meta.name}` : "Coming soon"}
+              </button>
+            )
           ) : isConnected ? (
             !showConfirm ? (
               <div className="flex gap-2">
@@ -665,7 +663,7 @@ function ModalShell({ children, onClose, dark = false }: { children: React.React
 function ModalHeader({ icon, iconBg, title, subtitle, dark = false }: { icon: React.ReactNode; iconBg: string; title: string; subtitle: string; dark?: boolean }) {
   return (
     <div className="flex items-center gap-3">
-      <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg text-white shadow-sm", iconBg)}>{icon}</div>
+      <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg shadow-sm", iconBg)}>{icon}</div>
       <div>
         <h3 className={cn("text-lg font-bold tracking-tight", dark ? "text-white" : "text-ink")}>{title}</h3>
         <p className={cn("text-xs font-medium", dark ? "text-slate-400" : "text-[#5c6c7a]")}>{subtitle}</p>

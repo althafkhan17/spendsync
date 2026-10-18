@@ -1,16 +1,23 @@
 import React from "react";
-import { Lock } from "lucide-react";
+import { Plus } from "lucide-react";
 
-/** Stand-in for a write action (Add, Edit, Delete) on the public demo. Server component. */
-export function DisabledAction({ label }: { label: string }) {
+/**
+ * Stand-in for a write action (Add, Delete) on the public sample workspace.
+ * Looks like the real button but has no handler, so it is inert. Server component.
+ */
+export function DisabledAction({ label, variant = "primary" }: { label: string; variant?: "primary" | "danger" }) {
   return (
     <button
       type="button"
-      disabled
-      title="Disabled in demo mode. Create your own workspace to use this."
-      className="inline-flex h-10 cursor-not-allowed items-center justify-center gap-2 rounded-full border border-dashed border-hairline-strong bg-surface-3 px-5 text-sm font-semibold text-ink-subtle"
+      aria-disabled
+      title="Available in your own workspace"
+      className={
+        variant === "danger"
+          ? "inline-flex h-10 items-center justify-center gap-2 rounded-full border border-red-200 bg-white px-5 text-sm font-semibold text-red-600 shadow-sm"
+          : "inline-flex h-10 items-center justify-center gap-2 rounded-full border border-transparent bg-[#00ed64] px-5 text-sm font-semibold text-[#001e2b] shadow-sm"
+      }
     >
-      <Lock className="h-3.5 w-3.5" />
+      {variant === "primary" && <Plus className="h-4 w-4" />}
       {label}
     </button>
   );

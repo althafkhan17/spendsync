@@ -39,7 +39,7 @@ See [.env.example](.env.example) for the full list with comments. Required for t
 
 ## Public demo
 
-`/demo` is a read-only tour of the whole dashboard with sample data. It is excluded from Clerk in `src/proxy.ts`, renders entirely from `src/lib/demo-data.ts`, never touches the database, and disables every write action. Share it with prospects who have not signed up.
+`/demo` is a read-only sample workspace ("Northwind Studio") that shows the whole dashboard without sign-up. It is excluded from Clerk in `src/proxy.ts`, renders entirely from `src/lib/demo-data.ts`, never touches the database, and every write action is inert. The data is fictional and intentionally unlabelled apart from the "Sample workspace" pill in the sidebar, so it records cleanly for videos; share it with prospects.
 
 ## How it works
 

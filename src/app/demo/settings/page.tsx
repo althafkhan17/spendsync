@@ -85,7 +85,7 @@ export default function DemoSettingsPage() {
             <p className="mt-3 text-xs text-[#5c6c7a] leading-relaxed">
               Forward receipts from Gmail, Outlook, or directly from Stripe and other billing services to this address.
               SpendSync parses PDFs and plain text, extracts the vendor, seats, price, currency and renewal date, and updates
-              the dashboard. This demo address belongs to a fictional workspace, so anything sent to it is discarded.
+              the dashboard.
             </p>
           </div>
         </CardContent>
@@ -107,7 +107,7 @@ export default function DemoSettingsPage() {
               <p className="text-sm font-semibold text-ink">Delete all subscriptions</p>
               <p className="text-xs text-ink-subtle">Permanently remove all SaaS subscriptions tracked in this workspace.</p>
             </div>
-            <DisabledAction label="Delete all" />
+            <DisabledAction label="Delete all subscriptions" variant="danger" />
           </div>
         </CardContent>
       </Card>

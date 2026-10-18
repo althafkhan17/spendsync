@@ -167,16 +167,16 @@ export function Sidebar({ collapsed, setCollapsed, basePath = "/dashboard", demo
                 collapsed ? "justify-center" : "gap-3"
               )}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-[10px] font-bold tracking-wide text-sidebar-foreground">
-                DEMO
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-[11px] font-bold text-sidebar-foreground">
+                NS
               </div>
               {!collapsed && (
                 <div className="flex flex-col min-w-0 flex-1">
                   <span className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">
-                    Demo visitor
+                    Northwind Studio
                   </span>
                   <span className="truncate text-[10px] text-sidebar-primary font-medium mt-0.5">
-                    Create your workspace
+                    Sample workspace · create yours
                   </span>
                 </div>
               )}

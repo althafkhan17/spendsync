@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Inbox } from "lucide-react";
 import { SubscriptionActions } from "./SubscriptionActions";
+import { MerchantLogo } from "@/components/brand/MerchantLogo";
 import type { SubscriptionRow } from "@/app/actions/subscriptions";
 
 type StatusKey = "ACTIVE" | "CANCELLED" | "NEEDS_REVIEW";
@@ -51,11 +52,6 @@ function getStatusLabel(status: StatusKey) {
 
 function getCycleLabel(cycle: "MONTHLY" | "ANNUAL") {
   return cycle === "MONTHLY" ? "Monthly" : "Annual";
-}
-
-/** First letter of merchant name for the logo fallback */
-function getMerchantInitial(name: string) {
-  return name.charAt(0).toUpperCase();
 }
 
 function formatDate(date: Date) {
@@ -161,9 +157,7 @@ export function SubscriptionTable({ subscriptions, showActions = false }: Subscr
               >
                 <TableCell className="py-4 pl-6">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-3 border border-hairline text-sm font-medium text-ink transition-colors group-hover:bg-slate-100">
-                      {getMerchantInitial(sub.merchantName)}
-                    </div>
+                    <MerchantLogo name={sub.merchantName} size={36} />
                     <span className="text-sm font-medium text-ink">
                       {sub.merchantName}
                     </span>
